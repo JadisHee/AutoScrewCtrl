@@ -204,6 +204,8 @@ def getHikSwitchPlanByTCP(Host, PortNumber, SwitchCode, PlanName):
     # 创建客户端
     HikClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # 链接服务端
+
+    
     HikClient.connect((Host, PortNumber))
     # 整理发送数据
     msgSend = SwitchCode + ' ' + PlanName

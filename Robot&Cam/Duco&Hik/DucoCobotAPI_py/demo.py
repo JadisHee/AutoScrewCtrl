@@ -67,17 +67,53 @@ def main():
     
     duco_cobot = DucoCobot(ip,7003)
     op = Op()
+
+    # 轨迹起始点触发类型
+    # 0: 启动
+    # 1: 时间触发
+    # 2: 距离触发
     op.time_or_dist_1 = 0
+
+    # 轨迹触发控制柜IO的输出序号，范围1~16
     op.trig_io_1 = 1
+
+    # 轨迹触发控制柜IO的高低电平
+    # False: 低电平
+    # True:  高电平
     op.trig_value_1 = False
+
+    # 当time_or_dist_1为1时，代表轨迹运行多少时间长度触发IO,单位ms
     op.trig_time_1 = 0.0
+
+    # 当time_or_dist_1为2时，代表轨迹运行多少距离长度触发IO,单位m
     op.trig_dist_1 = 0.0
+
+    # 轨迹触发的用户自定义事件名称
     op.trig_event_1 = ''
+
+    # 轨迹结束点触发类型
+    # 0: 不启用
+    # 1: 时间触发
+    # 2: 距离触发
     op.time_or_dist_2 = 0
+    
+    # 轨迹触发控制柜IO的输出序号，范围1~16
     op.trig_io_2 = 1
+
+    # 轨迹触发控制柜IO的电平高低
+    # False: 低电平
+    # True:  高电平
     op.trig_value_2 = False
+
+    # 当time_or_dist_2为1时，当trig_time_2 >= 0时，代表轨迹运行剩余多少时间长度触发IO,单位ms
+    # 当trig_time_2 < 0时，代表代表轨迹运行结束后多少时间长度触发IO
     op.trig_time_2 = 0.0
+
+    # 当time_or_dist_2为2时，当trig_ dist _2 >= 0时，代表轨迹运行剩余多少距离长度触发IO,单位m
+    # 当trig_ dist _2 < 0时，代表代表轨迹运行结束后多少距离长度触发IO
     op.trig_dist_2 = 0.0
+
+    # 轨迹触发的用户自定义事件名称
     op.trig_event_2 = ''
 
     # Connect!

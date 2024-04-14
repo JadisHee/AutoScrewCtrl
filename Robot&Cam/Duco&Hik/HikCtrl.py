@@ -1,11 +1,84 @@
 import math
 import numpy as np
 import cv2
+import socket
 
 class HikCtrl:
 
-    def __init__(self):
+    def __init__(self,ip,port):
+        self.ip = ip
+        self.port = port
         pass
+
+    def SetHikSwitchPlan(self, SwitchCode, PlanName):
+        '''
+        * Function:     SetHikSwitchPlan
+        * Description:  控制海康相机切换方案
+        * Inputs:
+                            SwitchCode: 切换语句
+                            PlanName:   待切换方案的名称
+        * Outputs:      切换方案成功
+        * Returns:      
+        * Notes:
+        '''
+        # 创建客户端
+        HikClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # 链接服务端
+
+    
+        HikClient.connect((self.ip, self.port))
+        # 整理发送数据
+        msgSend = SwitchCode + ' ' + PlanName
+        # 发送数据
+        while 1:
+            HikClient.send(msgSend.encode('utf-8'))
+            data = HikClient.recv(1024)
+            # data1 = data.decode('utf-8')
+            # print(data1[0])
+            data = str(data, 'utf-8')
+            # print(data[0])
+            if data == str('ok'):
+                print('成功切换至方案： ', PlanName)
+                break
+
+    def GetDataFromHik(self, StartMsg, Num):
+        '''
+        * Function:     GetDataFromHik
+        * Description:  控制海康相机进行识别并获取检测结果
+        * Inputs:
+                            StartMsg:   切换语句
+                            Num:        需要读取的数据个数，所有数据均需采用4.2长度设计，各数据含义需在SC MVS软件中自行注明
+        * Outputs:      
+        * Returns:      
+        * Notes:        检测结果的数据
+        '''
+        # 创建客户端
+        HikClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # 链接客户端
+        HikClient.connect((self.ip, self.port))
+        # 读取客户端
+        # Flag = True
+        while 1:
+            msgStart = StartMsg
+            HikClient.send(msgStart.encode('utf-8'))
+            data = HikClient.recv(1024)
+            # data1 = data.decode('utf-8')
+            # print(data1[0])
+            data = str(data, 'utf-8')
+            # print(data[0])
+            if data[0] == str(1):
+                print('收到智能相机数据')
+                print(data)
+                break
+            # else:
+            # sleep(0.1)
+        Data = np.zeros((Num, 1))
+        # print(Data)
+        for i in range(Num):
+            Data[i] = data[8 * i + 2+i:8 * i + 10+i]
+        # np.array(Data)
+        HikClient.close()
+        return Data
 
     def QuartToRpy(self,x,y,z,w):
         '''
@@ -71,5 +144,5 @@ class HikCtrl:
         py = PosNow[1] + MoveCam[1]
         pz = PosNow[2]
 
-        return [px[0],py[0],pz]
+        return [px[0],py[0],pz,PosNow[3], PosNow[4], PosNow[5]]
     

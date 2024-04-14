@@ -1,11 +1,20 @@
-from AuboClass import robotcontrol as RC
+from DucoCobotAPI_py.DucoCobot import DucoCobot
 import socket
 import time
 
 class DanikorCtrl:
-    def __init__(self):
-        RC.Auboi5Robot.initialize()
-        self.robot = RC.Auboi5Robot()
+
+
+    def __init__(self, DucoIp, DucoPort, DanikorIp, DanikorPort):
+        
+        self.DucoIp = DucoIp
+        self.DucoPort = DucoPort
+        self.DanikorIp = DanikorIp
+        self.DanikorPort = DanikorPort
+        
+        # 与机械臂建立连接
+        self.robot = DucoCobot(self.DucoIp, self.DucoPort)
+        self.robot.open()
         pass
 
     def ClawCtrl(self,target_status):
@@ -22,13 +31,16 @@ class DanikorCtrl:
         * Notes:
         '''
         if target_status == 0:
-            self.robot.set_board_io_status(5,"U_DO_03",0)
-            self.robot.set_board_io_status(5,"U_DO_04",1)
+
+            self.robot.set_standard_digital_out(1,0,True)
+            # self.robot.set_board_io_status(5,"U_DO_03",0)
+            self.robot.set_standard_digital_out(2,1,True)
+            # self.robot.set_board_io_status(5,"U_DO_04",1)
             return 0
-            # robot.set_board_io_status(5,"U_DO_04",0)
         elif target_status == 1:
-            self.robot.set_board_io_status(5,"U_DO_04",0)
-            self.robot.set_board_io_status(5,"U_DO_03",1)
+            self.robot.set_standard_digital_out(2,0,True)
+            self.robot.set_standard_digital_out(1,1,True)
+            
             return 1
 
     def VacuumCtrl(self,target_status):
@@ -46,15 +58,17 @@ class DanikorCtrl:
         * Notes:
         '''
         if target_status == 0:
-            self.robot.set_board_io_status(5,"U_DO_05",0)
+            self.robot.set_standard_digital_out(3,0,True)
+            # self.robot.set_board_io_status(5,"U_DO_05",0)
             return 0
         elif target_status == 1:
             # 设置启动io
-            self.robot.set_board_io_status(5,"U_DO_05",1)
+            self.robot.set_standard_digital_out(3,1,True)
+            
             # 等待两秒
             time.sleep(2)
             # 通过气压表io检测气压是否达标
-            IsPressOk = self.robot.get_board_io_status(4,"U_DI_02")
+            IsPressOk = self.robot.get_standard_digital_in(1)
             if IsPressOk == 0:
                 return 1
             else:
@@ -76,12 +90,12 @@ class DanikorCtrl:
         '''
         if target_status == 0:
             # 通过io控制模组收回
-            self.robot.set_board_io_status(5,"U_DO_10",0)
-            self.robot.set_board_io_status(5,"U_DO_07",1)
+            self.robot.set_standard_digital_out(5,0,True)
+            self.robot.set_standard_digital_out(6,1,True)
             
             # 循环读取到位模块，若到位则正常返回，若超过3s未到位，则异常返回
             for i in range(0,5,1):
-                IsBackOk = self.robot.get_board_io_status(4,"U_DI_04")
+                IsBackOk = self.robot.get_standard_digital_in(2)
                 if IsBackOk == 1:
                     return 0
                 else:
@@ -89,19 +103,21 @@ class DanikorCtrl:
                     if i > 3:
                         return 2
         elif target_status == 1:
-            self.robot.set_board_io_status(5,"U_DO_07",0)
-            self.robot.set_board_io_status(5,"U_DO_10",1)
+            # 通过io控制模组伸出
+            self.robot.set_standard_digital_out(6,0,True)
+            self.robot.set_standard_digital_out(5,1,True)
+
             # 循环读取到位模块，若到位则正常返回，若超过3s未到位，则异常返回
             for i in range(0,5,1):
-                IsBackOk = self.robot.get_board_io_status(4,"U_DI_03")
-                if IsBackOk == 1:
+                IsUpOk = self.robot.get_standard_digital_in(3)
+                if IsUpOk == 1:
                     return 1
                 else:
                     time.sleep(1)
                     if i > 3:
                         return 2
 
-    def ScrewMotorCtrl(self,ip,port):
+    def ScrewMotorCtrl(self):
         '''
         * Function:     ScrewMotorCtrl
         * Description:  对拧钉电批进行控制
@@ -119,7 +135,7 @@ class DanikorCtrl:
         
         try:
             # 连接到目标设备
-            s.connect((ip, port))
+            s.connect((self.DanikorIp, self.DanikorPort))
             
             # 将十六进制字符串转换为字节串
             byte_data = bytes.fromhex(MotorStart_Hex)
