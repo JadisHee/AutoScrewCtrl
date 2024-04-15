@@ -2,6 +2,7 @@ import numpy as np
 import time
 import math
 
+from SocketCtrl import XmlData
 from HikCtrl import HikCtrl
 from DucoCtrl import DucoCtrl
 from DanikorCtrl import DanikorCtrl
@@ -60,10 +61,12 @@ def main():
     hik = HikCtrl(HikIp,HikPort)
     duco = DucoCtrl(DucoIp,DucoPort)
     danikor = DanikorCtrl(DucoIp,DucoPort,DanikorIp,DanikorPort)
-
+    XmlData.TypeData = 1
 
     # 机械臂回到拍照位置
     duco.DucoMove(origin_photo_pos,vel,acc)
+    XmlData.StageData = '协作臂正在前往拍照位置'
+    XmlData.StageNumData = 1
 
     # 获取机械臂拍完照后末端位姿
     PhotoPos =  duco.GetDucoPos()
@@ -73,6 +76,14 @@ def main():
 
     # 发出检测信号并记录数据
     DetectedData = hik.GetDataFromHik(msgStart,9)
+    XmlData.StageNumData = 2
+    XmlData.StageData = '相机正在检测螺纹孔'
+    if DetectedData != 0:
+        XmlData.CooperativeArmData = 1
+    else:
+        XmlData.CooperativeArmData = 0
+        XmlData.ErrorData = '相机识别失败'
+        return
 
     # 检测控制盒的宽度，用于计算比例尺，单位: 像素
     dPixel = DetectedData[0,0]
@@ -146,6 +157,8 @@ def main():
         danikor.ScrewMotorCtrl()
 
         '''
+
+
         在此处添加判断是否拧紧的依据
         此时暂时以延时替代
         '''

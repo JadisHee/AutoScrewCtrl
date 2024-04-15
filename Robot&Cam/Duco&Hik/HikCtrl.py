@@ -2,6 +2,7 @@ import math
 import numpy as np
 import cv2
 import socket
+import time
 
 class HikCtrl:
 
@@ -39,7 +40,10 @@ class HikCtrl:
             # print(data[0])
             if data == str('ok'):
                 print('成功切换至方案： ', PlanName)
-                break
+                return 1
+            else:
+                print('切换方案失败')
+                return 0
 
     def GetDataFromHik(self, StartMsg, Num):
         '''
@@ -49,7 +53,8 @@ class HikCtrl:
                             StartMsg:   切换语句
                             Num:        需要读取的数据个数，所有数据均需采用4.2长度设计，各数据含义需在SC MVS软件中自行注明
         * Outputs:      
-        * Returns:      
+        * Returns:      0: 超过3s未检测目标
+                        data: 检测结果
         * Notes:        检测结果的数据
         '''
         # 创建客户端
@@ -58,6 +63,8 @@ class HikCtrl:
         HikClient.connect((self.ip, self.port))
         # 读取客户端
         # Flag = True
+        
+        T1 = time.time()
         while 1:
             msgStart = StartMsg
             HikClient.send(msgStart.encode('utf-8'))
@@ -66,10 +73,13 @@ class HikCtrl:
             # print(data1[0])
             data = str(data, 'utf-8')
             # print(data[0])
+            T2 = time.time()
             if data[0] == str(1):
                 print('收到智能相机数据')
                 print(data)
                 break
+            if T2 - T1 >= 3:
+                return 0
             # else:
             # sleep(0.1)
         Data = np.zeros((Num, 1))
@@ -127,6 +137,7 @@ class HikCtrl:
         * Returns:      目标孔位的位置坐标 list[list]
         * Notes:        
         '''
+        
         
         # 计算旋转矩阵
         RotVec = np.array([PosNow[3], PosNow[4], PosNow[5]])
