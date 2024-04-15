@@ -39,7 +39,7 @@ class XmlData:
     ErrorData = ''
 
 
-    def Sendself(self,ip,port):
+    def SetXmlData(self):
         # 创建XML数据
         Message = ET.Element("Message")
         Type = ET.SubElement(Message,"Type")
@@ -73,18 +73,5 @@ class XmlData:
         StageNum.text = str(self.StageNumData)
         Error.text = self.ErrorData
 
-        xml_data = ET.tostring(Message)
-
-        # 创建TCP socket对象
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        try:
-            # 连接服务器
-            sock.connect(ip,port)
-
-            # 发送XML数据
-            sock.sendall(xml_data)
-
-        finally:
-            # 关闭socket连接
-            sock.close()
+        xml_data = ET.tostring(Message,encoding='unicode')
+        return xml_data

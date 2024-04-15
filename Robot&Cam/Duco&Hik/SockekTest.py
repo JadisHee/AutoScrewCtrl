@@ -4,42 +4,44 @@ import time
 import threading
 import xml.etree.ElementTree as ET
 
-
+set_xml = XmlData()
 def test():
-    XmlData.TypeData = 1
+    
+    set_xml.TypeData = 1
     time.sleep(2)
 
-    XmlData.SystemStatusData = True
-    XmlData.StageNumData = 1
-    XmlData.StageData = '正在进行第一步'
+    set_xml.SystemStatusData = True
+    set_xml.StageNumData = 1
+    set_xml.StageData = '正在进行第一步'
 
-    for i in 4:
-        XmlData.StageNumData = XmlData.StageNumData + 1
+    
+    for i in range(4):
+        set_xml.StageNumData = set_xml.StageNumData + 1
         if i == 0:
-            XmlData.StageData = '正在进行第一阶段的第一步'
+            set_xml.StageData = '正在进行第一阶段的第一步'
         elif i == 1:
-            XmlData.StageData = '正在进行第二阶段的第一步'
+            set_xml.StageData = '正在进行第二阶段的第一步'
         elif i == 2:
-            XmlData.StageData = '正在进行第三阶段的第一步'
+            set_xml.StageData = '正在进行第三阶段的第一步'
         elif i == 3:
-            XmlData.StageData = '正在进行第四阶段的第一步'
+            set_xml.StageData = '正在进行第四阶段的第一步'
 
         time.sleep(2)
 
-        XmlData.VacuumStateData = True
-        XmlData.StageNumData = XmlData.StageNumData + 1
+        set_xml.VacuumStateData = True
+        set_xml.StageNumData = set_xml.StageNumData + 1
         time.sleep(2)
 
-        XmlData.ScrewStateData = True
-        XmlData.StageNumData = XmlData.StageNumData + 1
+        set_xml.ScrewStateData = True
+        set_xml.StageNumData = set_xml.StageNumData + 1
         time.sleep(2)
 
-        XmlData.ClampingForceData = 2.4124
-        XmlData.VacuumStateData = False
-        XmlData.StageNumData = XmlData.StageNumData + 1
+        set_xml.ClampingForceData = 2.4124
+        set_xml.VacuumStateData = False
+        set_xml.StageNumData = set_xml.StageNumData + 1
 
         
-    XmlData.TypeData = 2
+    set_xml.TypeData = 2
 
 if __name__ == '__main__':
     # 创建 socket 对象
@@ -63,19 +65,30 @@ if __name__ == '__main__':
         print('连接地址：', addr)
 
         # 接收数据
-        data = b''
-        while True:
-            chunk = client_socket.recv(1024)
-            if not chunk:
-                break
-            data += chunk
+        data = client_socket.recv(1024)
+        # data = b''
+        # while data != 0:
+        #     chunk = client_socket.recv(1024)
+        #     if not chunk:
+        #         break
+        #     data += chunk
 
+        # Message = ET.fromstring(data)
+
+        thd_test = threading.Thread(target=test)
         Message = ET.fromstring(data)
         for Type in Message.findall('Type'):
-            
-        # 向客户端发送数据
-        message = '欢迎访问服务器！'
-        client_socket.send(message.encode('utf-8'))
+            if int(Type.text) == 0:
+                thd_test.start()
+
+
+        while thd_test.is_alive():
+
+            # 向客户端发送数据
+            message = str(set_xml.SetXmlData())
+            client_socket.send(message.encode('utf-8'))
+            time.sleep(1)
 
         # 关闭连接
         client_socket.close()
+        break

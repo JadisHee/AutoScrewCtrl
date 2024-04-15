@@ -24,19 +24,19 @@ Error = ET.SubElement(Status,"Error")
 
 
 
-Type.text = str(1)
-SystemStatus.text = str(True)
-CooperativeArmCamera.text = str(True)
-CooperativeArm.text = str(True)
-ImgPath.text = "/home/jadis/pictures/DetectPics.pmb"
-ConnectState.text = str(True)
-VacuumState.text = str(True)
-ScrewState.text = str(True)
-ClampingForce.text = str(3.14)
-Stage.text = "正在前往料盒"
-StageNum.text = str(2)
+Type.text = str(0)
+# SystemStatus.text = str(True)
+# CooperativeArmCamera.text = str(True)
+# CooperativeArm.text = str(True)
+# ImgPath.text = "/home/jadis/pictures/DetectPics.pmb"
+# ConnectState.text = str(True)
+# VacuumState.text = str(True)
+# ScrewState.text = str(True)
+# ClampingForce.text = str(3.14)
+# Stage.text = "正在前往料盒"
+# StageNum.text = str(2)
 
-Error.text = "气压不足，请检查气压表"
+# Error.text = "气压不足，请检查气压表"
 
 xml_data = ET.tostring(Message)
 # 设置服务器地址和端口

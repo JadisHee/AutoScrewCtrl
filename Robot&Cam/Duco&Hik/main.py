@@ -8,6 +8,7 @@ from DucoCtrl import DucoCtrl
 from DanikorCtrl import DanikorCtrl
 
 def main():
+    set_xml = XmlData()
     #-------------------------设置视觉相关参数-----------------------------
     # 海康相机的通讯地址
     HikIp = "192.168.1.101"
@@ -61,12 +62,13 @@ def main():
     hik = HikCtrl(HikIp,HikPort)
     duco = DucoCtrl(DucoIp,DucoPort)
     danikor = DanikorCtrl(DucoIp,DucoPort,DanikorIp,DanikorPort)
-    XmlData.TypeData = 1
+    set_xml.TypeData = 1
+    set_xml.SystemStatusData = True
 
     # 机械臂回到拍照位置
     duco.DucoMove(origin_photo_pos,vel,acc)
-    XmlData.StageData = '协作臂正在前往拍照位置'
-    XmlData.StageNumData = 1
+    set_xml.StageData = '协作臂正在前往拍照位置'
+    set_xml.StageNumData = 1
 
     # 获取机械臂拍完照后末端位姿
     PhotoPos =  duco.GetDucoPos()
@@ -76,13 +78,14 @@ def main():
 
     # 发出检测信号并记录数据
     DetectedData = hik.GetDataFromHik(msgStart,9)
-    XmlData.StageNumData = 2
-    XmlData.StageData = '相机正在检测螺纹孔'
+    set_xml.StageNumData = 2
+    set_xml.StageData = '相机正在检测螺纹孔'
     if DetectedData != 0:
-        XmlData.CooperativeArmData = 1
+        set_xml.CooperativeArmData = 1
     else:
-        XmlData.CooperativeArmData = 0
-        XmlData.ErrorData = '相机识别失败'
+        set_xml.CooperativeArmData = 0
+        set_xml.SystemStatusData = False
+        set_xml.ErrorData = '相机识别失败'
         return
 
     # 检测控制盒的宽度，用于计算比例尺，单位: 像素
@@ -101,28 +104,52 @@ def main():
     Ruler = dReal / dPixel
 
     for j in range(numTotal):
+        
+        StageFront = ''
+        if i == 0:
+            StageFront = '拧钉进程: 1/4'
+        elif i == 1:
+            StageFront = '拧钉进程: 2/4'
+        elif i == 2:
+            StageFront = '拧钉进程: 3/4'
+        elif i == 3:
+            StageFront = '拧钉进程: 4/4'
 
+        set_xml.StageNumData = set_xml.StageNumData + 1
+        set_xml.StageData = StageFront + ',' + '正在前往螺钉上方'
         # 螺钉正上方与机械臂拍照位等高的位置
         screw_up = [screw_pos[j][0], screw_pos[j][1], PhotoPos[2], math.pi, 0, math.pi]
         # 控制机械臂移动至上方
         duco.DucoMove(screw_up,vel,acc)
         time.sleep(1)
 
+        set_xml.StageNumData = set_xml.StageNumData + 1
+        set_xml.StageData = StageFront + ',' + '正在初始化电批模组'
         # 初始化电批模组
         # 夹爪张开，吸钉关闭，模组收回
         danikor.InitialAllMould()
 
+        set_xml.StageNumData = set_xml.StageNumData + 1
+        set_xml.StageData = StageFront + ',' + '正在移动至吸钉位置'
         # 控制机械臂向下移动至吸钉位置
         duco.DucoMove(screw_pos[j],vel,acc)
 
+        set_xml.StageNumData = set_xml.StageNumData + 1
+        set_xml.StageData = StageFront + ',' + '开启真空阀'
         # 开启真空阀
         danikor.VacuumCtrl(1)
+        set_xml.VacuumStateData = 1
         time.sleep(1)
 
+        set_xml.StageNumData = set_xml.StageNumData + 1
+        set_xml.StageData = StageFront + ',' + '闭合夹爪'
         # 闭合夹爪
         danikor.ClawCtrl(0)
         time.sleep(1)
 
+
+        set_xml.StageNumData = set_xml.StageNumData + 1
+        set_xml.StageData = StageFront + ',' + '正在前往螺纹孔上方'
         # 控制机械臂回到该螺钉上方
         duco.DucoMove(screw_up,vel,acc)
         time.sleep(1)
@@ -133,6 +160,8 @@ def main():
         # 控制机械臂来到当前目标螺纹孔上方
         duco.DucoMove(circle_target,vel,acc)
 
+        set_xml.StageNumData = set_xml.StageNumData + 1
+        set_xml.StageData = StageFront + ',' + '电批模组准备中'
         # 控制电批模组伸出
         IsOk =  danikor.DriverCtrl(1)
 
@@ -143,6 +172,8 @@ def main():
         # 最终拧钉位置
         target_pos = [circle_target[0], circle_target[1], circle_target[2] - DeepIn, circle_target[3], circle_target[4], circle_target[5]]
         
+        set_xml.StageNumData = set_xml.StageNumData + 1
+        set_xml.StageData = StageFront + ',' + '正在对准孔位'
         # 控制机械臂下降至螺纹孔上方
         duco.DucoMove(target_pos,vel,acc)
         time.sleep(1)
@@ -150,6 +181,9 @@ def main():
         '''
         在此处添加是否可以开始拧钉的依据
         '''
+
+        set_xml.StageNumData = set_xml.StageNumData + 1
+        set_xml.StageData = StageFront + ',' + '正在拧钉'
         # 松开夹爪
         danikor.ClawCtrl(1)
         
