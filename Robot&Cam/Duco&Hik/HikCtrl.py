@@ -108,7 +108,7 @@ class HikCtrl:
         yaw = math.atan2(2 * (w * z + x * y), 1 - 2 * (z * z + y * y))
         return roll, pitch, yaw
     
-    def GetRotVec2RotMat(RotVec):
+    def GetRotVec2RotMat(self,RotVec):
         '''
         * Function:     GetRotVec2RotMat
         * Description:  将旋转向量转换为旋转矩阵

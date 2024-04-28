@@ -32,15 +32,19 @@ class DanikorCtrl:
         '''
         if target_status == 0:
 
-            self.robot.set_standard_digital_out(1,0,True)
+            self.robot.set_standard_digital_out(3,0,True)
             # self.robot.set_board_io_status(5,"U_DO_03",0)
-            self.robot.set_standard_digital_out(2,1,True)
+            self.robot.set_standard_digital_out(4,1,True)
             # self.robot.set_board_io_status(5,"U_DO_04",1)
+            time.sleep(1)
+            self.robot.set_standard_digital_out(4,0,True)
             return 0
         elif target_status == 1:
-            self.robot.set_standard_digital_out(2,0,True)
-            self.robot.set_standard_digital_out(1,1,True)
-            
+            self.robot.set_standard_digital_out(4,0,True)
+            self.robot.set_standard_digital_out(3,1,True)
+
+            time.sleep(1)
+            self.robot.set_standard_digital_out(3,0,True)
             return 1
 
     def VacuumCtrl(self,target_status):
@@ -58,12 +62,12 @@ class DanikorCtrl:
         * Notes:
         '''
         if target_status == 0:
-            self.robot.set_standard_digital_out(3,0,True)
+            self.robot.set_standard_digital_out(5,0,True)
             # self.robot.set_board_io_status(5,"U_DO_05",0)
             return 0
         elif target_status == 1:
             # 设置启动io
-            self.robot.set_standard_digital_out(3,1,True)
+            self.robot.set_standard_digital_out(5,1,True)
             
             # 等待两秒
             time.sleep(2)
@@ -90,22 +94,22 @@ class DanikorCtrl:
         '''
         if target_status == 0:
             # 通过io控制模组收回
-            self.robot.set_standard_digital_out(5,0,True)
-            self.robot.set_standard_digital_out(6,1,True)
+            self.robot.set_standard_digital_out(2,0,True)
+            self.robot.set_standard_digital_out(4,1,True)
             
-            # 循环读取到位模块，若到位则正常返回，若超过3s未到位，则异常返回
+            # 循环读取到位模块，若到位则正常返回，若超过5s未到位，则异常返回
             for i in range(0,5,1):
                 IsBackOk = self.robot.get_standard_digital_in(2)
                 if IsBackOk == 1:
                     return 0
                 else:
                     time.sleep(1)
-                    if i > 3:
+                    if i > 5:
                         return 2
         elif target_status == 1:
             # 通过io控制模组伸出
-            self.robot.set_standard_digital_out(6,0,True)
-            self.robot.set_standard_digital_out(5,1,True)
+            self.robot.set_standard_digital_out(4,0,True)
+            self.robot.set_standard_digital_out(2,1,True)
 
             # 循环读取到位模块，若到位则正常返回，若超过3s未到位，则异常返回
             for i in range(0,5,1):
@@ -117,32 +121,65 @@ class DanikorCtrl:
                     if i > 3:
                         return 2
 
-    def ScrewMotorCtrl(self):
+    def ScrewMotorCtrl(self,CtrlMod):
         '''
         * Function:     ScrewMotorCtrl
         * Description:  对拧钉电批进行控制
-        * Inputs:       ip:电批的ip地址
-                        port:电批的端口号
+        * Inputs:       CtrlMod:电批的运行模式
+                            1: 正常拧钉指令
+                            2: 快速反拧寻帽指令
         * Outputs:      无输出
         * Returns:      最终的状态
                             0:与电批的通讯发生错误
                             1:通讯电批启动成功
         * Notes:
         '''
+        # 与电批建立连接的指令
+        SetConnection = "0200000005523030303103"
 
-        MotorStart_Hex = "020000000A573033303130313D313B03"
+        # 订阅拧紧结果数据
+        SubResult = "0200000005523032303203"
+
+        # 切换正常拧钉指令
+        Pset_1 = "020000000A573031303330313D313B03"
+        
+        # 切换反拧寻帽指令
+        Pset_2 = "020000000A573031303330313D323B03"
+        
+        # 正向运行
+        MotorStart = "020000000A573033303130313D313B03"
+
+        SelectMod = ""
+
+        if CtrlMod == 1:
+            SelectMod = Pset_1
+        elif CtrlMod == 2:
+            SelectMod = Pset_2
+        else:
+            print("input wrong!!!")
+            return 0
+
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
+
+
+
         try:
             # 连接到目标设备
             s.connect((self.DanikorIp, self.DanikorPort))
             
             # 将十六进制字符串转换为字节串
-            byte_data = bytes.fromhex(MotorStart_Hex)
-            
+            byte_data_1 = bytes.fromhex(SelectMod)
+            s.sendall(byte_data_1)
+
+            time.sleep(1)
+            byte_data_2 = bytes.fromhex(MotorStart)
+
             # 发送数据
-            s.sendall(byte_data)
-            
+            s.sendall(byte_data_2)   
+
+
+
             return 1
             # print("\n电批启动成功！")
             
@@ -150,12 +187,24 @@ class DanikorCtrl:
 
             return 0
             # print(f"\n电批启动时发生错误：{e}")
+        
             
         finally:
             # 关闭连接
             s.close()
 
+    def ScrewConferm(self):
+        
+        IsScrewOk = self.robot.get_standard_digital_in(4)
+        
+        time.sleep(1)
 
+        if IsScrewOk == True:
+            return True
+        else:
+            return False
+    
+    
     def InitialAllMould(self):
         '''
         * Function:     InitialAllMould
@@ -193,3 +242,5 @@ class DanikorCtrl:
             return 1
         else:
             return 0
+        
+

@@ -11,8 +11,9 @@ from thrift import Thrift
 from thrift.transport import TSocket
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
-from gen_py.robot import RPCRobot
-from gen_py.robot.ttypes import StateRobot, StateProgram, OperationMode, TaskState, Op, RealTimeControlData
+from DucoCobotAPI_py.gen_py.robot import RPCRobot
+# from gen_py.robot import RPCRobot
+from DucoCobotAPI_py.gen_py.robot.ttypes import StateRobot, StateProgram, OperationMode, TaskState, Op, RealTimeControlData
 
 
 class DucoCobot:

@@ -1,0 +1,580 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<ISO15745Profile xmlns="http://www.profibus.com/GSDML/2003/11/DeviceProfile" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.profibus.com/GSDML/2003/11/DeviceProfile ..\xsd\GSDML-DeviceProfile-V2.35.xsd">
+   <!-- ProfileHeader definition as defined in ISO 15745-1. Please do not change the content. -->
+   <ProfileHeader>
+      <ProfileIdentification>PROFINET Device Profile</ProfileIdentification>
+      <ProfileRevision>1.00</ProfileRevision>
+      <ProfileName>Device Profile for PROFINET Devices</ProfileName>
+      <ProfileSource>PROFIBUS Nutzerorganisation e. V. (PNO)</ProfileSource>
+      <ProfileClassID>Device</ProfileClassID>
+      <ISO15745Reference>
+         <ISO15745Part>4</ISO15745Part>
+         <ISO15745Edition>1</ISO15745Edition>
+         <ProfileTechnology>GSDML</ProfileTechnology>
+      </ISO15745Reference>
+   </ProfileHeader>
+   <ProfileBody>
+      <DeviceIdentity VendorID="0xfeed" DeviceID="0xbeef">
+         <InfoText TextId="IDT_INFO_Device"/>
+         <VendorName Value="siasun-cobot"/>
+      </DeviceIdentity>
+      <DeviceFunction>
+         <Family MainFamily="I/O" ProductFamily="siasun-cobot dev"/>
+      </DeviceFunction>
+      <ApplicationProcess>
+         <DeviceAccessPointList>
+            <DeviceAccessPointItem ID="IDD_1" PNIO_Version="V2.35" PhysicalSlots="0..11" ModuleIdentNumber="0x00000001" MinDeviceInterval="32" DNS_CompatibleName="siasun-cobot-dev" FixedInSlots="0" ObjectUUID_LocalIndex="1" DeviceAccessSupported="true" NumberOfDeviceAccessAR="2" MultipleWriteSupported="true" CheckDeviceID_Allowed="true" NameOfStationNotTransferable="false" LLDP_NoD_Supported="true" ResetToFactoryModes="1..2">
+               <ModuleInfo>
+                  <Name TextId="IDT_MODULE_NAME_DAP1"/>
+                  <InfoText TextId="IDT_INFO_DAP1"/>
+                  <VendorName Value="siasun-cobot"/>
+                  <OrderNumber Value="12345"/>
+                  <HardwareRelease Value="A1.0"/>
+                  <SoftwareRelease Value="Z1.0"/>
+               </ModuleInfo>
+               <CertificationInfo ConformanceClass="A" ApplicationClass="" NetloadClass="I"/>
+               <IOConfigData MaxInputLength="1440" MaxOutputLength="1440"/>
+               <UseableModules>
+                  <ModuleItemRef ModuleItemTarget="IDM_11" FixedInSlots="1"/>
+                  <ModuleItemRef ModuleItemTarget="IDM_12" FixedInSlots="2"/>
+                  <ModuleItemRef ModuleItemTarget="IDM_13" FixedInSlots="3"/>
+                  <ModuleItemRef ModuleItemTarget="IDM_14" FixedInSlots="4"/>
+                  <ModuleItemRef ModuleItemTarget="IDM_15" FixedInSlots="5"/>
+                  <ModuleItemRef ModuleItemTarget="IDM_16" FixedInSlots="6"/>
+                  <ModuleItemRef ModuleItemTarget="IDM_17" FixedInSlots="7"/>
+                  <ModuleItemRef ModuleItemTarget="IDM_18" FixedInSlots="8"/>
+                  <ModuleItemRef ModuleItemTarget="IDM_19" FixedInSlots="9"/>
+				  <ModuleItemRef ModuleItemTarget="IDM_20" FixedInSlots="10"/>
+                  <ModuleItemRef ModuleItemTarget="IDM_21" FixedInSlots="11"/>
+               </UseableModules>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="IDS_1" SubmoduleIdentNumber="0x00000001" Writeable_IM_Records="1 2 3" MayIssueProcessAlarm="false">
+                     <IOData/>
+                     <ModuleInfo>
+                        <Name TextId="IDT_MODULE_NAME_DAP1"/>
+                        <InfoText TextId="IDT_INFO_DAP1"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+               <SystemDefinedSubmoduleList>
+                  <InterfaceSubmoduleItem ID="IDS_I" SubmoduleIdentNumber="0x00008000" SubslotNumber="32768" TextId="IDT_NAME_IS" SupportedRT_Classes="RT_CLASS_1" SupportedProtocols="LLDP" NetworkComponentDiagnosisSupported="false" PTP_BoundarySupported="true" DCP_BoundarySupported="true">
+                     <ApplicationRelations StartupMode="Advanced;Legacy">
+                        <TimingProperties SendClock="32" ReductionRatio="1 2 4 8 16 32 64 128 256 512"/>
+                     </ApplicationRelations>
+                  </InterfaceSubmoduleItem>
+                  <PortSubmoduleItem ID="IDS_P1" SubmoduleIdentNumber="0x00008001" SubslotNumber="32769" TextId="IDT_NAME_PS1" MaxPortRxDelay="350" MaxPortTxDelay="160">
+                     <MAUTypeList>
+                        <MAUTypeItem Value="16"/>
+                     </MAUTypeList>
+                  </PortSubmoduleItem>
+               </SystemDefinedSubmoduleList>
+            </DeviceAccessPointItem>
+         </DeviceAccessPointList>
+          <ModuleList>
+            <ModuleItem ID="IDM_11" ModuleIdentNumber="0x00000030">
+               <ModuleInfo>
+                  <Name TextId="R2PLC_DigitalSignalStatus"/>
+                  <InfoText TextId="InfoTextR2PLC_DigitalSignalStatus"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="11" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Input Consistency="All items consistency">
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+	                        <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                        </Input>
+                     </IOData>
+                     <ModuleInfo>
+                        <Name TextId="R2PLC_DigitalSignalStatus"/>
+                        <InfoText TextId="InfoTextR2PLC_DigitalSignalStatus"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+            <ModuleItem ID="IDM_12" ModuleIdentNumber="0x00000031">
+               <ModuleInfo>
+                  <Name TextId="R2PLC_RobotState"/>
+                  <InfoText TextId="InfoTextR2PLC_RobotState"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="12" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Input Consistency="All items consistency">
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                        </Input>
+                     </IOData>
+                     <ModuleInfo>
+                        <Name TextId="R2PLC_RobotState"/>
+                        <InfoText TextId="InfoTextR2PLC_RobotState"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+            <ModuleItem ID="IDM_13" ModuleIdentNumber="0x00000032">
+               <ModuleInfo>
+                  <Name TextId="R2PLC_BitOutputReg"/>
+                  <InfoText TextId="InfoTextR2PLC_BitOutputReg"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="13" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Input Consistency="All items consistency">
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                        </Input>
+                     </IOData>
+                     <ModuleInfo>
+                        <Name TextId="R2PLC_BitOutputReg"/>
+                        <InfoText TextId="InfoTextR2PLC_BitOutputReg"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+            <ModuleItem ID="IDM_14" ModuleIdentNumber="0x00000033">
+               <ModuleInfo>
+                  <Name TextId="R2PLC_WordOutputReg"/>
+                  <InfoText TextId="InfoTextR2PLC_WordOutputReg"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="14" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Input Consistency="All items consistency">
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                        </Input>
+                     </IOData>
+                     <ModuleInfo>
+                        <Name TextId="R2PLC_WordOutputReg"/>
+                        <InfoText TextId="InfoTextR2PLC_WordOutputReg"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+
+            <ModuleItem ID="IDM_15" ModuleIdentNumber="0x00000034">
+               <ModuleInfo>
+                  <Name TextId="R2PLC_FloatOutputReg"/>
+                  <InfoText TextId="InfoTextR2PLC_FloatOutputReg"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="15" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Input Consistency="All items consistency">
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                        </Input>
+                     </IOData>
+                     <RecordDataList>
+                        <ParameterRecordDataItem Index="123" Length="4">
+                           <Name TextId="siasun-cobot_parameter_1"/>
+                           <Ref DataType="Unsigned32" ByteOffset="0" DefaultValue="0" AllowedValues="0..99" Changeable="true" Visible="true" TextId="DEMO_1"/>
+                        </ParameterRecordDataItem>
+                        <ParameterRecordDataItem Index="124" Length="4">
+                           <Name TextId="siasun-cobot_parameter_2"/>
+                           <Ref DataType="Unsigned32" ByteOffset="0" DefaultValue="0" AllowedValues="0..99" Changeable="true" Visible="true" TextId="DEMO_2"/>
+                        </ParameterRecordDataItem>
+                     </RecordDataList>
+                     <ModuleInfo>
+                        <Name TextId="R2PLC_FloatOutputReg"/>
+                        <InfoText TextId="InfoTextR2PLC_FloatOutputReg"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+
+            <ModuleItem ID="IDM_16" ModuleIdentNumber="0x00000035">
+               <ModuleInfo>
+                  <Name TextId="PLC2R_Digital_Output_Command"/>
+                  <InfoText TextId="InfoTextPLC2R_Digital_Output_Command"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="16" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Output Consistency="All items consistency">
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                        </Output>
+                     </IOData>
+                     <ModuleInfo>
+                        <Name TextId="PLC2R_Digital_Output_Command"/>
+                        <InfoText TextId="InfoTextPLC2R_Digital_Output_Command"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+
+            <ModuleItem ID="IDM_17" ModuleIdentNumber="0x00000036">
+               <ModuleInfo>
+                  <Name TextId="PLC2R_BitInputReg"/>
+                  <InfoText TextId="InfoTextPLC2R_BitInputReg"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="17" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Output Consistency="All items consistency">
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                           <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+	                        <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+			                  <DataItem DataType="Unsigned8" UseAsBits="true" TextId="Unsigned8"/>
+                        </Output>
+                     </IOData>
+                     <ModuleInfo>
+                        <Name TextId="PLC2R_BitInputReg"/>
+                        <InfoText TextId="InfoTextPLC2R_BitInputReg"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+
+            <ModuleItem ID="IDM_18" ModuleIdentNumber="0x00000037">
+               <ModuleInfo>
+                  <Name TextId="PLC2R_WordInputReg"/>
+                  <InfoText TextId="InfoTextPLC2R_WordInputReg"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="18" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Output Consistency="All items consistency">
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                           <DataItem DataType="Unsigned16" UseAsBits="false" TextId="Unsigned16"/>
+                        </Output>
+                     </IOData>
+                     <ModuleInfo>
+                        <Name TextId="PLC2R_WordInputReg"/>
+                        <InfoText TextId="InfoTextPLC2R_WordInputReg"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+
+            <ModuleItem ID="IDM_19" ModuleIdentNumber="0x00000038">
+               <ModuleInfo>
+                  <Name TextId="PLC2R_FloatInputReg"/>
+                  <InfoText TextId="InfoTextPLC2R_FloatInputReg"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="19" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Output Consistency="All items consistency">
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                           <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+								   <DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                        </Output>
+                     </IOData>
+                     <ModuleInfo>
+                        <Name TextId="PLC2R_FloatInputReg"/>
+                        <InfoText TextId="InfoTextPLC2R_FloatInputReg"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+
+            <ModuleItem ID="IDM_20" ModuleIdentNumber="0x00000039">
+               <ModuleInfo>
+                  <Name TextId="R2PLC_RobotInfo"/>
+                  <InfoText TextId="InfoTextR2PLC_RobotInfo"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="20" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Input Consistency="All items consistency">
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                        </Input>
+                     </IOData>
+                     <ModuleInfo>
+                        <Name TextId="R2PLC_RobotInfo"/>
+                        <InfoText TextId="InfoTextR2PLC_RobotInfo"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+
+			<ModuleItem ID="IDM_21" ModuleIdentNumber="0x0000003A">
+               <ModuleInfo>
+                  <Name TextId="PLC2R_RobotInfo"/>
+                  <InfoText TextId="InfoTextPLC2R_RobotInfo"/>
+                  <HardwareRelease Value="1.0"/>
+                  <SoftwareRelease Value="1.0"/>
+               </ModuleInfo>
+               <VirtualSubmoduleList>
+                  <VirtualSubmoduleItem ID="21" SubmoduleIdentNumber="0x0001" API="0" MayIssueProcessAlarm="false">
+                     <IOData>
+                        <Output Consistency="All items consistency">
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+							<DataItem DataType="Float32" UseAsBits="false" TextId="Float32"/>
+                        </Output>
+                     </IOData>
+                     <ModuleInfo>
+                        <Name TextId="PLC2R_RobotInfo"/>
+                        <InfoText TextId="InfoTextPLC2R_RobotInfo"/>
+                     </ModuleInfo>
+                  </VirtualSubmoduleItem>
+               </VirtualSubmoduleList>
+            </ModuleItem>
+
+
+         </ModuleList>
+         <ExternalTextList>
+            <PrimaryLanguage>
+             <Text TextId="IDT_INFO_Device" Value="PNO GSDML V2.35 Examples"/>
+               <Text TextId="IDT_MODULE_NAME_DAP1" Value="siasun-cobot DEMO device, for PNIO controller with PDev"/>
+               <Text TextId="IDT_INFO_DAP1" Value="Example for a ProfinetIO device"/>
+               <Text TextId="IDT_NAME_IS" Value="I"/>
+               <Text TextId="IDT_NAME_PS1" Value="P1"/>
+               <!--ParameterRecordDataItem name-->
+               <Text TextId="siasun-cobot_parameter_1" Value="Parameter 1" />
+               <Text TextId="siasun-cobot_parameter_2" Value="Parameter 2" />
+               <Text TextId="DEMO_1" Value="DEMO_1" />
+               <Text TextId="DEMO_2" Value="DEMO_2" />
+               <Text TextId="R2PLC_DigitalSignalStatus" Value="R2PLC_DigitalSignalStatus" />
+               <Text TextId="InfoTextR2PLC_DigitalSignalStatus" Value="InfoTextR2PLC_DigitalSignalStatus" />
+               <Text TextId="R2PLC_RobotState" Value="R2PLC_RobotState" />
+               <Text TextId="InfoTextR2PLC_RobotState" Value="InfoTextR2PLC_RobotState" />
+               <Text TextId="R2PLC_BitOutputReg" Value="DEMOR2PLC_BitOutputReg_2" />
+               <Text TextId="InfoTextR2PLC_BitOutputReg" Value="InfoTextR2PLC_BitOutputReg" />
+               <Text TextId="R2PLC_WordOutputReg" Value="R2PLC_WordOutputReg" />
+               <Text TextId="InfoTextR2PLC_WordOutputReg" Value="InfoTextR2PLC_WordOutputReg" />
+               <Text TextId="R2PLC_FloatOutputReg" Value="R2PLC_FloatOutputReg" />
+               <Text TextId="InfoTextR2PLC_FloatOutputReg" Value="InfoTextR2PLC_FloatOutputReg" />
+               <Text TextId="PLC2R_Digital_Output_Command" Value="PLC2R_Digital_Output_Command" />
+               <Text TextId="InfoTextPLC2R_Digital_Output_Command" Value="InfoTextPLC2R_Digital_Output_Command" />
+               <Text TextId="PLC2R_BitInputReg" Value="PLC2R_BitInputReg" />
+               <Text TextId="InfoTextPLC2R_BitInputReg" Value="InfoTextPLC2R_BitInputReg" />
+               <Text TextId="PLC2R_WordInputReg" Value="PLC2R_WordInputReg" />
+               <Text TextId="InfoTextPLC2R_WordInputReg" Value="InfoTextPLC2R_WordInputReg" />
+               <Text TextId="PLC2R_FloatInputReg" Value="PLC2R_FloatInputReg" />
+               <Text TextId="InfoTextPLC2R_FloatInputReg" Value="InfoTextPLC2R_FloatInputReg" />
+			   <Text TextId="R2PLC_RobotInfo" Value="R2PLC_RobotInfo" />
+               <Text TextId="InfoTextR2PLC_RobotInfo" Value="InfoTextR2PLC_RobotInfo" />
+			   <Text TextId="PLC2R_RobotInfo" Value="PLC2R_RobotInfo" />
+               <Text TextId="InfoTextPLC2R_RobotInfo" Value="InfoTextPLC2R_RobotInfo" />
+               <Text TextId="Unsigned8" Value="Unsigned8" />
+               <Text TextId="Unsigned16" Value="Unsigned16" />
+               <Text TextId="Float32" Value="Float32" />
+            </PrimaryLanguage>
+         </ExternalTextList>
+      </ApplicationProcess>
+   </ProfileBody>
+</ISO15745Profile>
