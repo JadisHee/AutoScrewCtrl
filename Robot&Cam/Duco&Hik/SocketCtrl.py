@@ -5,26 +5,27 @@ class XmlData:
     # 启停，0为启动，1为运行中，2为停止
     TypeData = 2
 
+    Command = 0
     # 系统运行状态，True为正常，False为异常
-    SystemStatusData = False
+    SystemStatusData = "false"
 
     # 相机状态，True为已检测，False为未检测
-    CooperativeArmCameraData = False
+    CooperativeArmCameraData = "false"
 
     # 协作臂连接状态，True为已连接，False为未连接
-    CooperativeArmData = False
+    CooperativeArmData = "false"
 
     # 检测图像路径
     ImgPathData = ''
 
     # 电批模组连接状态，True为已连接，False为未连接
-    ConnectStateData = False
+    ConnectStateData = "false"
 
     # 真空发生器状态，True为打开，False为关闭
-    VacuumStateData = False
+    VacuumStateData = "false"
 
     # 螺钉状态检测，True为已吸上，False为未吸上
-    ScrewStateData = False
+    ScrewStateData = "false"
 
     # 拧紧力度数值
     ClampingForceData = 0.0
@@ -38,6 +39,7 @@ class XmlData:
     # 错误信息
     ErrorData = ''
 
+    
 
     def SetXmlData(self):
         # 创建XML数据

@@ -65,6 +65,8 @@ class StepProcess:
                             PosTwistScrewSlowDown: 拧钉减速位置位姿 [x, y, z, rx, ry, rz]，位置单位: m，姿态范围[-2*pi, 2*pi]，单位rad
             * Outputs:        
             * Returns:      
+                            0: 未吸附上螺钉
+                            其他: 拧钉力矩
             * Notes:
         '''
 
@@ -145,7 +147,7 @@ class StepProcess:
         duco.DucoMoveL(PosGetScrewSlowDown,vel_end,acc_end,self.QNearGetScrew)
 
         # 协作臂快速来到吸钉退出位置
-        duco.DucoMoveL(self.PosGetScrewLeave,vel_end,acc_end,self.QNearGetScrew)
+        duco.DucoMoveL(self.PosGetScrewLeave,vel_move,acc_move,self.QNearGetScrew)
         
         # 协作臂快速来到检测过渡位置
         duco.DucoMoveL(self.PosGetScrewGoToConfirm,vel_move,acc_move,self.QNearGetScrew)
@@ -203,7 +205,7 @@ class StepProcess:
         # 协作臂来到吸钉安全位置
         duco.DucoMoveL(self.PosGetScrewStandby,vel_move,acc_move,self.QNearGetScrew)
 
-        return 1
+        return 3.12
 
     def Screw_2(self,PosGetScrew,PosTwistScrewSlowDown):
         '''
@@ -296,7 +298,7 @@ class StepProcess:
         duco.DucoMoveL(PosGetScrewSlowDown,vel_end,acc_end,self.QNearGetScrew)
 
         # 协作臂来到吸钉退出位置
-        duco.DucoMoveL(self.PosGetScrewLeave,vel_end,acc_end,self.QNearGetScrew)
+        duco.DucoMoveL(self.PosGetScrewLeave,vel_move,acc_move,self.QNearGetScrew)
         
         # 协作臂快速来到检测过渡位置
         duco.DucoMoveL(self.PosGetScrewGoToConfirm,vel_move,acc_move,self.QNearGetScrew)
@@ -366,7 +368,7 @@ class StepProcess:
         # 协作臂来到吸钉安全位置
         duco.DucoMoveL(self.PosGetScrewStandby,vel_move,acc_move,self.QNearGetScrew)
 
-        return 1
+        return 2.56
 
 
 
