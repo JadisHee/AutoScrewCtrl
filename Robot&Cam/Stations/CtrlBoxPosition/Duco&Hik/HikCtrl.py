@@ -2,6 +2,7 @@ import math
 import numpy as np
 import cv2
 import socket
+
 import time
 
 class HikCtrl:
@@ -45,50 +46,90 @@ class HikCtrl:
                 print('切换方案失败')
                 return 0
 
-    def GetDataFromHik(self, StartMsg, Num):
+    def GetDataFromHik(self, StartSignal):
         '''
-        * Function:     GetDataFromHik
-        * Description:  控制海康相机进行识别并获取检测结果
-        * Inputs:
-                            StartMsg:   切换语句
-                            Num:        需要读取的数据个数，所有数据均需采用4.2长度设计，各数据含义需在SC MVS软件中自行注明
-        * Outputs:      
-        * Returns:      0: 超过3s未检测目标
-                        data: 检测结果
-        * Notes:        检测结果的数据
+            * Function:     GetDataFromHik
+            * Description:  控制海康相机进行识别并获取检测结果
+            * Inputs:
+                                StartSignal:   开始信号
+            * Outputs:      
+            * Returns:      0: 超过3s未检测目标
+                            data: 检测结果
+            * Notes:        
         '''
         # 创建客户端
         HikClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # 链接客户端
         HikClient.connect((self.ip, self.port))
-        # 读取客户端
-        # Flag = True
-        
-        T1 = time.time()
+
+        # 程序开始时间
+        TimeStart = time.time()
+
         while 1:
-            msgStart = StartMsg
-            HikClient.send(msgStart.encode('utf-8'))
-            data = HikClient.recv(1024)
-            # data1 = data.decode('utf-8')
-            # print(data1[0])
-            data = str(data, 'utf-8')
-            # print(data[0])
-            T2 = time.time()
-            if data[0] == str(1):
-                print('收到智能相机数据')
-                print(data)
-                break
-            if T2 - T1 >= 3:
-                return 0
-            # else:
-            # sleep(0.1)
-        Data = np.zeros((Num, 1))
-        # print(Data)
-        for i in range(Num):
-            Data[i] = data[8 * i + 2+i:8 * i + 10+i]
-        # np.array(Data)
-        HikClient.close()
-        return Data
+            HikClient.send(StartSignal.encode('utf-8'))
+            FeedBack = HikClient.recv(1024)
+            FeedBackString = FeedBack.decode()
+            if FeedBackString[0] == '1': 
+                print("检测成功! ! !")
+                DataList = FeedBackString.split(";")[:-1]
+
+                UsefulData = [int(DataList[0])]
+                UsefulData.extend(float(i) for i in DataList[1:])
+                return UsefulData
+            else:
+                TimeEnd = time.time()
+                RunTime = TimeEnd - TimeStart
+                if RunTime >= 3:
+                    print("检测失败")
+                    break   
+            time.sleep(0.1)
+    
+        return 0
+
+    # def GetDataFromHik(self, StartMsg, Num):
+    #     '''
+    #     * Function:     GetDataFromHik
+    #     * Description:  控制海康相机进行识别并获取检测结果
+    #     * Inputs:
+    #                         StartMsg:   切换语句
+    #                         Num:        需要读取的数据个数，所有数据均需采用4.2长度设计，各数据含义需在SC MVS软件中自行注明
+    #     * Outputs:      
+    #     * Returns:      0: 超过3s未检测目标
+    #                     data: 检测结果
+    #     * Notes:        检测结果的数据
+    #     '''
+    #     # 创建客户端
+    #     HikClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #     # 链接客户端
+    #     HikClient.connect((self.ip, self.port))
+    #     # 读取客户端
+    #     # Flag = True
+        
+    #     T1 = time.time()
+    #     while 1:
+    #         msgStart = StartMsg
+    #         HikClient.send(msgStart.encode('utf-8'))
+    #         data = HikClient.recv(1024)
+    #         # data1 = data.decode('utf-8')
+    #         # print(data1[0])
+    #         data = str(data, 'utf-8')
+    #         # print(data[0])
+    #         T2 = time.time()
+    #         if data[0] == str(1):
+    #             print('收到智能相机数据')
+    #             print(data)
+    #             break
+    #         if T2 - T1 >= 3:
+    #             return 0
+    #         # else:
+    #         # sleep(0.1)
+    #     Data = np.zeros((Num, 1))
+    #     # print(Data)
+    #     for i in range(Num):
+    #         Data[i] = data[8 * i + 2+i:8 * i + 10+i]
+    #     # np.array(Data)
+    #     HikClient.close()
+    #     return Data
 
     def QuartToRpy(self,x,y,z,w):
         '''
@@ -120,40 +161,64 @@ class HikCtrl:
         RotMat = cv2.Rodrigues(RotVec)[0]
         return RotMat
 
-
-    def GetTargetPos(self,width,height,disCamX,disCamY,RotationEndToCam,dRuler,PosNow,CirclePos):
+    def GetDPosMillimeter(self,DiameterPixel,PosPixel,DiameterMillimeter):
         '''
-        * Function:     GetTargetPos
-        * Description:  计算目标点在机械臂下的位置
-        * Inputs:       width: 图像的宽度
-                        height: 图像的高度
-                        disCamX: 电批头相对于相机的X轴偏移值
-                        disCamY: 电批头相对于相机的X轴偏移值
-                        RotationEndToCam: 末端到相机的旋转矩阵
-                        dRuler: 比例尺
-                        PosNow: 机械臂末端当前姿态
-                        CirclePos: 孔在图像中的坐标
+        * Function:     GetDPosMillimeter
+        * Description:  计算检测圆在图像中的图像中心的XY偏移
+        * Inputs:       
+                        DiameterPixel: 像素直径
+                        PosPixel: 像素坐标
+                        DiameterMillimeter: 真实直径(mm)
         * Outputs:      无输出
-        * Returns:      目标孔位的位置坐标 list[list]
-        * Notes:        
+        * Returns:      旋转矩阵
+        * Notes:
         '''
+        # PictureSize = [2368,1760]
+        # 图像中心像素坐标
+        CenterPixel = [1184,880]
+
+        dx_pixel = CenterPixel[0] - PosPixel[0]
+        dy_pixel = CenterPixel[1] - PosPixel[1]
+
+        Druler = DiameterMillimeter / DiameterPixel
+
+        DPos = [dx_pixel*Druler, dy_pixel*Druler]
+
+        return DPos
+
+    # def GetTargetPos(self,width,height,disCamX,disCamY,RotationEndToCam,dRuler,PosNow,CirclePos):
+    #     '''
+    #     * Function:     GetTargetPos
+    #     * Description:  计算目标点在机械臂下的位置
+    #     * Inputs:       width: 图像的宽度
+    #                     height: 图像的高度
+    #                     disCamX: 电批头相对于相机的X轴偏移值
+    #                     disCamY: 电批头相对于相机的X轴偏移值
+    #                     RotationEndToCam: 末端到相机的旋转矩阵
+    #                     dRuler: 比例尺
+    #                     PosNow: 机械臂末端当前姿态
+    #                     CirclePos: 孔在图像中的坐标
+    #     * Outputs:      无输出
+    #     * Returns:      目标孔位的位置坐标 list[list]
+    #     * Notes:        
+    #     '''
         
         
-        # 计算旋转矩阵
-        RotVec = np.array([PosNow[3], PosNow[4], PosNow[5]])
-        RotBaseToEnd = self.GetRotVec2RotMat(RotVec)
+    #     # 计算旋转矩阵
+    #     RotVec = np.array([PosNow[3], PosNow[4], PosNow[5]])
+    #     RotBaseToEnd = self.GetRotVec2RotMat(RotVec)
 
-        MoveX = (CirclePos[0] - width / 2) * dRuler + disCamX
-        MoveY = (CirclePos[1] - height / 2) * dRuler + disCamY
+    #     MoveX = (CirclePos[0] - width / 2) * dRuler + disCamX
+    #     MoveY = (CirclePos[1] - height / 2) * dRuler + disCamY
 
-        Move1 = np.array([[MoveX], [MoveY], [0]])
-        Move1 = Move1 / 1000
+    #     Move1 = np.array([[MoveX], [MoveY], [0]])
+    #     Move1 = Move1 / 1000
 
-        MoveCam = RotBaseToEnd @ RotationEndToCam @ Move1
+    #     MoveCam = RotBaseToEnd @ RotationEndToCam @ Move1
 
-        px = PosNow[0] + MoveCam[0]
-        py = PosNow[1] + MoveCam[1]
-        pz = PosNow[2]
+    #     px = PosNow[0] + MoveCam[0]
+    #     py = PosNow[1] + MoveCam[1]
+    #     pz = PosNow[2]
 
-        return [px[0],py[0],pz,PosNow[3], PosNow[4], PosNow[5]]
+    #     return [px[0],py[0],pz,PosNow[3], PosNow[4], PosNow[5]]
     
