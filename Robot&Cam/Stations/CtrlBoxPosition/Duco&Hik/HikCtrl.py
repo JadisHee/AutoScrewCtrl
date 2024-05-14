@@ -2,6 +2,7 @@ import math
 import numpy as np
 import cv2
 import socket
+from scipy.spatial.transform import Rotation
 
 import time
 
@@ -82,7 +83,7 @@ class HikCtrl:
                 if RunTime >= 3:
                     print("检测失败")
                     break   
-            time.sleep(0.1)
+            # time.sleep(0.1)
     
         return 0
 
@@ -131,6 +132,40 @@ class HikCtrl:
     #     HikClient.close()
     #     return Data
 
+    def Euler2RotMat(self,rx, ry, rz):
+        """
+        Convert Euler angles [Rx, Ry, Rz] to rotation matrix.
+
+        Parameters:
+            rx: float
+                Rotation angle around X-axis in radians.
+            ry: float
+                Rotation angle around Y-axis in radians.
+            rz: float
+                Rotation angle around Z-axis in radians.
+
+        Returns:
+            rotation_matrix: numpy array
+                3x3 rotation matrix.
+        """
+        # Calculate rotation matrices for each axis
+        Rx = np.array([[1, 0, 0],
+                    [0, np.cos(rx), -np.sin(rx)],
+                    [0, np.sin(rx), np.cos(rx)]])
+        
+        Ry = np.array([[np.cos(ry), 0, np.sin(ry)],
+                    [0, 1, 0],
+                    [-np.sin(ry), 0, np.cos(ry)]])
+        
+        Rz = np.array([[np.cos(rz), -np.sin(rz), 0],
+                    [np.sin(rz), np.cos(rz), 0],
+                    [0, 0, 1]])
+        
+        # Combine the rotation matrices
+        rotation_matrix = np.dot(Rz, np.dot(Ry, Rx))
+        
+        return rotation_matrix
+
     def QuartToRpy(self,x,y,z,w):
         '''
         * Function:     quart_to_rpy
@@ -161,6 +196,69 @@ class HikCtrl:
         RotMat = cv2.Rodrigues(RotVec)[0]
         return RotMat
 
+    def PosTrans(self,PosVec,TransMat,DPos):
+        RotMat = self.Euler2RotMat(PosVec[3],PosVec[4],PosVec[5])
+        PosMat = np.array([[RotMat[0][0],RotMat[0][1],RotMat[0][2],PosVec[0]],
+                           [RotMat[1][0],RotMat[1][1],RotMat[1][2],PosVec[1]],
+                           [RotMat[2][0],RotMat[2][1],RotMat[2][2],PosVec[2]],
+                           [0,0,0,1]])
+
+        # 当前位置在工具坐标系下的姿态矩阵
+        TransPos = np.dot(PosMat,TransMat)
+        
+        # 当前工具坐标系下的旋转矩阵
+        TransPosRotMat = np.array([[TransPos[0][0],TransPos[0][1],TransPos[0][2]],
+                                   [TransPos[1][0],TransPos[1][1],TransPos[1][2]],
+                                   [TransPos[2][0],TransPos[2][1],TransPos[2][2]]])
+        # 变换为欧拉角
+        TransPosRot_ = Rotation.from_matrix(TransPosRotMat)
+        TransPosRot = TransPosRot_.as_euler('xyz',degrees=False)
+        TransPosVec = [TransPos[0][3],TransPos[1][3],TransPos[2][3],TransPosRot[0],TransPosRot[1],TransPosRot[2]]
+        print("当前工具坐标系下的位姿: ",TransPosVec)
+        
+        TransPosMoved = np.array([[TransPos[0][0],TransPos[0][1],TransPos[0][2],TransPos[0][3]+DPos[0]],
+                                  [TransPos[1][0],TransPos[1][1],TransPos[1][2],TransPos[0][3]+DPos[1]],
+                                  [TransPos[2][0],TransPos[2][1],TransPos[2][2],TransPos[0][3]],
+                                  [TransPos[3][0],TransPos[3][1],TransPos[3][2],TransPos[0][3]]])
+        print("位移之后的姿态矩阵:\n" , TransPosMoved)
+        
+        TransMat_inv = np.linalg.inv(TransMat)
+        TargetPos = np.dot(TransPosMoved, TransMat_inv)
+        # 变换为欧拉角
+        TargetPosRotMat = np.array([[TargetPos[0][0],TargetPos[0][1],TargetPos[0][2]],
+                                    [TargetPos[1][0],TargetPos[1][1],TargetPos[1][2]],
+                                    [TargetPos[2][0],TargetPos[2][1],TargetPos[2][2]]])
+        TargetPosRot_ = Rotation.from_matrix(TargetPosRotMat)
+        TargetPosRot = TargetPosRot_.as_euler('xyz',degrees=False)
+        TargetPosVec = [TargetPos[0][3],TargetPos[1][3],TargetPos[2][3],TargetPosRot[0],TargetPosRot[1],TargetPosRot[2]]
+        print("位移之后在法兰坐标系下的姿态:\n" ,TargetPosVec)
+        return TransPosVec
+
+    def GetTargetPos(self, DPos, TcpPosNow, ToolTransMat):
+        DPosMat = np.array([[1,0,0,DPos[0]],
+                            [0,1,0,DPos[1]],
+                            [0,0,1,0],
+                            [0,0,0,1]])
+
+        RotMat = self.Euler2RotMat(TcpPosNow[3],TcpPosNow[4],TcpPosNow[5])
+        PosMat = np.array([[RotMat[0][0],RotMat[0][1],RotMat[0][2],TcpPosNow[0]],
+                           [RotMat[1][0],RotMat[1][1],RotMat[1][2],TcpPosNow[1]],
+                           [RotMat[2][0],RotMat[2][1],RotMat[2][2],TcpPosNow[2]],
+                           [0,0,0,1]])
+
+        TargetPos = np.dot(np.dot(PosMat,ToolTransMat),DPosMat)
+        # 变换为欧拉角
+        TargetPosRotMat = np.array([[TargetPos[0][0],TargetPos[0][1],TargetPos[0][2]],
+                                    [TargetPos[1][0],TargetPos[1][1],TargetPos[1][2]],
+                                    [TargetPos[2][0],TargetPos[2][1],TargetPos[2][2]]])
+        TargetPosRot_ = Rotation.from_matrix(TargetPosRotMat)
+        TargetPosRot = TargetPosRot_.as_euler('xyz',degrees=False)
+        TargetPosVec = [TargetPos[0][3],TargetPos[1][3],TargetPos[2][3],TargetPosRot[0],TargetPosRot[1],TargetPosRot[2]]
+        
+
+
+        return TargetPosVec
+
     def GetDPosMillimeter(self,DiameterPixel,PosPixel,DiameterMillimeter):
         '''
         * Function:     GetDPosMillimeter
@@ -170,7 +268,7 @@ class HikCtrl:
                         PosPixel: 像素坐标
                         DiameterMillimeter: 真实直径(mm)
         * Outputs:      无输出
-        * Returns:      旋转矩阵
+        * Returns:      相机屏幕内的步进位移量(mm)
         * Notes:
         '''
         # PictureSize = [2368,1760]
@@ -182,7 +280,7 @@ class HikCtrl:
 
         Druler = DiameterMillimeter / DiameterPixel
 
-        DPos = [dx_pixel*Druler, dy_pixel*Druler]
+        DPos = [-dx_pixel*Druler/1000, -dy_pixel*Druler/1000]
 
         return DPos
 

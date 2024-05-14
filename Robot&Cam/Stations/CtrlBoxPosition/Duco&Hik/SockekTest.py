@@ -39,12 +39,15 @@ def OneStep(Command):
 
     if Command == 1:
         set_xml.ScrewStateData = "true"
-        result = process.Screw_1(PosGetScrewDown,PosTwistScrew,set_xml)
+        result = process.AutoDo(set_xml)
 
 
     # set_xml.ClampingForceData = result[0]
     # time.sleep(2)
-    return result[0]
+    if result == 0:
+        return 0
+    else:
+        return result[0]
 
 # def OneStep(Command):
 #     set_xml.TypeData = 1
@@ -92,6 +95,7 @@ if __name__ == '__main__':
     # 建立客户端连接
     client_socket, addr = server_socket.accept()
     print('连接地址：', addr)
+    i = 0
     while True:
     
         # 接收数据
@@ -124,6 +128,10 @@ if __name__ == '__main__':
             #  message.encode('utf-8')
             time.sleep(0.1)
 
+        i += 1
+        if i == 4:
+            print("此阶段拧钉完成 ! ! !")
+            break
         # # 关闭连接
         # client_socket.close()
         # break
