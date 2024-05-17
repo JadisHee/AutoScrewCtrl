@@ -3,11 +3,9 @@ import time
 import math
 
 from SocketCtrl import XmlData
-
 from DucoCtrl import DucoCtrl
-
-
-
+from TransferCtrl import TransferCtrl
+from CalcTools import CalcTools
 
 class StepProcess:
     
@@ -19,6 +17,7 @@ class StepProcess:
         DucoPort = 7003
 
         self.duco = DucoCtrl(DucoIp,DucoPort)
+        self.tools = CalcTools()
         
         ######### 固定示教位置 #########
         # 默认位置
@@ -38,8 +37,8 @@ class StepProcess:
             [0.1462930142879486, -0.8929665684700012, 0.5435361266136169, -3.141589641571045, 5.114184386911802e-05, -0.6463720202445984],
 
             # 检测安装位置
-            [0.837226152420044, -0.5443787574768066, 0.7296354174613953, -3.1415646076202393, 5.2592290558095556e-06, -0.6463878154754639]
 
+            [0.8372316956520081, -0.31042495369911194, 0.7296288013458252, -3.1415507793426514, 1.2959555533598177e-05, -0.646399199962616]
         
         ]
         self.TargetJ = [
@@ -58,7 +57,9 @@ class StepProcess:
             # 吸盘位置下降高度
             0.046,
             # 吸盘位置上升至旋转高度
-            -0.9
+            -0.9,
+            # 装配位置上方高度
+            -0.1
         ]
 
         
@@ -81,6 +82,7 @@ class StepProcess:
         # 判断机械臂是否位于初始位姿附近
         DistDefualt = math.sqrt((PosFirst[0] - self.PosDefault[0])**2 + (PosFirst[1] - self.PosDefault[1])**2 + (PosFirst[2] - self.PosDefault[2])**2)
         if DistDefualt > 0.001:
+            print("dist: ", DistDefualt)
             print("机械臂未就位 ! ! !")
             return 0 
         time.sleep(1)
@@ -120,3 +122,81 @@ class StepProcess:
         self.duco.DucoMoveJ(self.TargetJ[1],self.vel_joint,self.acc_joint)
         self.duco.DucoMovel(self.PosTargetJ[2],self.vel_move,self.acc_move,self.TargetJ[2],'default')
         
+        return 1
+    
+    def TakeTransferCamToPhotoPos(self):
+        
+        PosTarget = self.PosTargetJ[2].copy()
+        PosFirst = self.duco.GetDucoPos(1)
+        # 判断机械臂是否位于初始位姿附近
+        DistDefualt = math.sqrt((PosFirst[0] - PosTarget[0])**2 + (PosFirst[1] - PosTarget[1])**2 + (PosFirst[2] - PosTarget[2])**2)
+        if DistDefualt > 0.001:
+            print("机械臂未在吸盘检测位置就绪 ! ! !")
+            return 0 
+        time.sleep(1)
+        
+        self.duco.DucoMovel(self.PosTargetJ[3],self.vel_move,self.acc_move,self.TargetJ[3],'default')
+
+        return 1
+
+    def TakeAntennaToTarget(self,TargetPosVec,TcpVec):
+        
+        PosTarget = self.PosTargetJ[3].copy()
+        PosFirst = self.duco.GetDucoPos(1)
+        # 判断机械臂是否位于初始位姿附近
+        DistDefualt = math.sqrt((PosFirst[0] - PosTarget[0])**2 + (PosFirst[1] - PosTarget[1])**2 + (PosFirst[2] - PosTarget[2])**2)
+        if DistDefualt > 0.001:
+            print("机械臂未在装配拍照位置就绪 ! ! !")
+            return 0 
+        time.sleep(1)
+
+        TcpVecUp = TcpVec.copy()
+        TcpVecUp[2] = TcpVecUp[2] + 0.1
+        TcpUpMat = self.tools.PosVecToPosMat(TcpVecUp)
+        TcpUpMat_inv = np.linalg.inv(TcpUpMat)
+        
+
+        TargetPos = self.tools.PosVecToPosMat(TargetPosVec)
+        TcpMat = self.tools.PosVecToPosMat(TcpVec)
+        TcpMat_inv = np.linalg.inv(TcpMat)
+        TargetPosFlangeMat = np.dot(TargetPos,TcpMat_inv)
+        TargetPosFlangeVec = self.tools.PosMatToPosVec(TargetPosFlangeMat)
+
+        TargetPosUpFlangeMat = np.dot(TargetPos,TcpUpMat_inv)
+        TargetPosUpFlangeVec = self.tools.PosMatToPosVec(TargetPosUpFlangeMat)
+        # TargetPosFlange = TargetPosFlangeVec.copy()
+        print("目标姿态为: ",TargetPosFlangeVec)
+        print("目标上方姿态为: ", TargetPosUpFlangeVec)
+        # TargetPosFlange[2] = TargetPosFlange[2] - self.Deepth[2]
+
+        self.duco.DucoMovel(TargetPosUpFlangeVec,self.vel_move/2,self.acc_move,self.TargetJ[3],'default')
+
+        self.duco.DucoMovel(TargetPosFlangeVec,self.vel_end,self.acc_end,self.TargetJ[3],'default')
+        return 1
+    
+    def GoBackToDefault(self,TargetPosVec,TcpVec):
+        TcpVecUp = TcpVec.copy()
+        TcpVecUp[2] = TcpVecUp[2] + 0.1
+        TcpUpMat = self.tools.PosVecToPosMat(TcpVecUp)
+        TcpUpMat_inv = np.linalg.inv(TcpUpMat)
+        
+
+        TargetPos = self.tools.PosVecToPosMat(TargetPosVec)
+
+        TargetPosUpFlangeMat = np.dot(TargetPos,TcpUpMat_inv)
+        TargetPosUpFlangeVec = self.tools.PosMatToPosVec(TargetPosUpFlangeMat)
+        # TargetPosFlange = TargetPosFlangeVec.copy()
+        # print("目标姿态为: ",TargetPosFlangeVec)
+        print("目标上方姿态为: ", TargetPosUpFlangeVec)
+
+        self.duco.DucoMovel(TargetPosUpFlangeVec,self.vel_move/2,self.acc_move,self.TargetJ[3],'default')
+
+        self.duco.DucoMovel(self.PosTargetJ[3],self.vel_move,self.acc_move,self.TargetJ[3],'default')
+
+        # self.duco.DucoMoveJ(self.TargetJ[2],self.vel_joint,self.acc_joint)
+
+        self.duco.DucoMoveJ(self.TargetJ[1],self.vel_joint,self.acc_joint)
+
+        self.duco.DucoMoveJ(self.TargetJ[0],self.vel_joint,self.acc_joint)
+
+        self.duco.DucoMovel(self.PosDefault,self.vel_move,self.acc_move,self.QNearDefault,'default')
