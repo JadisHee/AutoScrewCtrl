@@ -6,8 +6,8 @@ from SocketCtrl import XmlData
 
 from DucoCtrl import DucoCtrl
 
-
-from StepProcess import StepProcess
+# from StepProcess import StepProcess
+from TestProcess import StepProcess
 
 from CalcTools import CalcTools as T
 
@@ -18,8 +18,8 @@ ToolTransMat = np.array([[0.7986355,   0.6018150,  0.0000000,  0.07986],
 
 TcpVec = [0.07986, -0.06018, 0.2035, 0.0, 0.0, -0.6457718034476305]
 
-# [1.1748631000518799, -0.3924994170665741, 0.4590481221675873, -2.9088878631591797, 0.17203548550605774, 0.9346023797988892]
-TargetPos = [1.1180192232131958, -0.2919119596481323, 0.26395073533058167, -2.8531243801116943, -3.4653501643333584e-05, 1.5601879358291626]
+# [1.1802024841308594, -0.38677525520324707, 0.46397334337234497, -2.9138171672821045, 0.19103771448135376, 0.9269683957099915]
+TargetPos = [1.1225818395614624, -0.2893384099006653, 0.26754915714263916, -2.8459413051605225, 0.0182438176125288, 1.5535279512405396]
 
 def StepMove():
     #------------------------设置协作臂相关参数----------------------------
@@ -52,21 +52,21 @@ def ShowPos():
     DucoPort = 7003
 
     duco = DucoCtrl(DucoIp,DucoPort)
-    tool = T()
+    # tool = T()
 
-    PosFlange = duco.GetDucoPos(0)
-    PosTool = duco.GetDucoPos(1)
+    # PosFlange = duco.GetDucoPos(0)
+    # PosTool = duco.GetDucoPos(1)
 
 
-    ToolPos = tool.PosTrans(PosFlange,ToolTransMat)
-    FlangePos = tool.PosTrans(ToolPos,np.linalg.inv(ToolTransMat))
+    # ToolPos = tool.PosTrans(PosFlange,ToolTransMat)
+    # FlangePos = tool.PosTrans(ToolPos,np.linalg.inv(ToolTransMat))
 
-    print("当前法兰姿态: ", PosFlange)
-    print("当前工具姿态: ", PosTool)
-    print("变换工具姿态: ", ToolPos)
-    print("变换法兰姿态: ", FlangePos)
-    # print("当前姿态:",duco.GetDucoPos(0))
-    # print("当前六轴:",duco.GetQNear())
+    # print("当前法兰姿态: ", PosFlange)
+    # print("当前工具姿态: ", PosTool)
+    # print("变换工具姿态: ", ToolPos)
+    # print("变换法兰姿态: ", FlangePos)
+    print("当前姿态:",duco.GetDucoPos(0))
+    print("当前六轴:",duco.GetQNear())
 
 def ProcessTest():
     process = StepProcess()
@@ -79,10 +79,19 @@ def ProcessTest():
 
     process.GoBackToDefault(TargetPos,TcpVec)
 
+
+def TestProcess():
+    process = StepProcess()
+    process.GoToGetAntenna()
+    process.TakeAntennaToGetTcp()
+    process.TakeCamToGetTarget()
+    process.TakeAntennaToTarget(TargetPos,TcpVec)
+    process.GoBackToDefault(TargetPos,TcpVec)
+
 if __name__ == '__main__':
 
-    ProcessTest()
-
+    # ProcessTest()
+    TestProcess()
     # StepMove()
     # ShowPos()
 
