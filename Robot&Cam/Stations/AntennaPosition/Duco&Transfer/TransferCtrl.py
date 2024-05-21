@@ -1,5 +1,6 @@
 import socket
 import time
+import math
 
 class TransferCtrl:
     def __init__(self,ip,port):
@@ -39,7 +40,7 @@ class TransferCtrl:
             ModCode = self.mod[0]    
         elif DetectMod == 1 and PosNow is not None:
             ModCode = self.mod[1]
-            PosDataSend = '172'+ str(PosNow[0]) + str(PosNow[1]) + str(PosNow[2]) + str(PosNow[3]) + str(PosNow[4]) + str(PosNow[0])
+            PosDataSend = '172,'+ str(PosNow[0]*1000) + ',' + str(PosNow[1]*1000) + ',' + str(PosNow[2]*1000) + ',' + str(PosNow[5]*180/math.pi) + ',' + str(PosNow[4]*180/math.pi) + ',' + str(PosNow[3]*180/math.pi)
         else:
             print('方案选择输入错误 ! ! !')
             return 0
@@ -49,6 +50,7 @@ class TransferCtrl:
         FeedBackString = FeedBack.decode()
         # 返回'160'为切换成功，'001'为失败
         if FeedBackString == '001':
+            print('切换失败 ! ! !')
             return 0
 
         # 开始时间
@@ -61,24 +63,31 @@ class TransferCtrl:
                 FeedBackString = FeedBack.decode()
                 # 返回'172'为切换成功，'001'为失败
                 if FeedBackString == '001':
+                    print('切换失败 ! ! !')
                     return 0
                 
             # 给相机发送启动指令
             TransferClient.send(StartSignal.encode('utf-8'))
             FeedBack = TransferClient.recv(1024)
             FeedBackString = FeedBack.decode()
-            if FeedBackString[0] == '001': 
+            if FeedBackString[0] == '2' or FeedBackString[0] == '1': 
                 print("检测成功! ! !")
-                DataList = FeedBackString.split(",")[:-1]
+                DataList = FeedBackString.split(",")[:]
 
                 UsefulData = [int(DataList[0])]
                 UsefulData.extend(float(i) for i in DataList[1:])
                 Data = UsefulData[1:]
+                Data[0] = Data[0]/1000
+                Data[1] = Data[1]/1000
+                Data[2] = Data[2]/1000
+                Data[3] = Data[3]*math.pi/180
+                Data[4] = Data[4]*math.pi/180
+                Data[5] = Data[5]*math.pi/180
                 return Data
             else:
                 TimeEnd = time.time()
                 RunTime = TimeEnd - TimeStart
-                if RunTime >= 3:
+                if RunTime >= 10:
                     print("检测失败")
                     break
         return 0

@@ -8,19 +8,20 @@ from DucoCtrl import DucoCtrl
 
 # from StepProcess import StepProcess
 from TestProcess import StepProcess
-
+from TransferCtrl import TransferCtrl
 from CalcTools import CalcTools as T
 
-ToolTransMat = np.array([[0.7986355,   0.6018150,  0.0000000,  0.07986],
-                         [-0.6018150,  0.7986355,  0.0000000, -0.06018],
-                         [0.0000000,   0.0000000,  1.0000000,   0.2035],
-                         [        0,           0,          0,        1] ])
+# ToolTransMat = np.array([[0.7986355,   0.6018150,  0.0000000,  0.07986],
+#                          [-0.6018150,  0.7986355,  0.0000000, -0.06018],
+#                          [0.0000000,   0.0000000,  1.0000000,   0.2035],
+#                          [        0,           0,          0,        1] ])
 
-TcpVec = [0.07986, -0.06018, 0.2035, 0.0, 0.0, -0.6457718034476305]
+# TcpVec = [0.07991, -0.05942, 0.20326, 0.18*math.pi/180,-0.41*math.pi/180,54.45*math.pi/180]
 
-# [1.1802024841308594, -0.38677525520324707, 0.46397334337234497, -2.9138171672821045, 0.19103771448135376, 0.9269683957099915]
-TargetPos = [1.1225818395614624, -0.2893384099006653, 0.26754915714263916, -2.8459413051605225, 0.0182438176125288, 1.5535279512405396]
+# 0.07986, -0.06018, 0.2035, 0.0, 0.0, -0.6457718034476305
 
+# TargetPos = [1.06185, -0.28989, 0.27735, 0.15*math.pi/180, 178.24*math.pi/180,179.99*math.pi/180]
+# 1.0611684322357178, -0.2894531786441803, 0.27714699506759644, -3.118072748184204, -4.84597148897592e-05, 1.5950757265090942
 def StepMove():
     #------------------------设置协作臂相关参数----------------------------
     # Duco机械臂的通讯地址
@@ -68,25 +69,68 @@ def ShowPos():
     print("当前姿态:",duco.GetDucoPos(0))
     print("当前六轴:",duco.GetQNear())
 
-def ProcessTest():
-    process = StepProcess()
-    process.GoToGetAntenna()
-
-    process.TakeAntennaToConfirmPos()
-    process.TakeTransferCamToPhotoPos()
-
-    process.TakeAntennaToTarget(TargetPos,TcpVec)
-
-    process.GoBackToDefault(TargetPos,TcpVec)
-
-
 def TestProcess():
+    # Duco机械臂的通讯地址
+    DucoIp = "192.168.1.47"
+    DucoPort = 7003
+
+    duco = DucoCtrl(DucoIp,DucoPort)
+
+    # 迁移ip
+    ip = '192.168.1.10'
+    # 迁移端口
+    port = 5700
+
+    StartSignal = '110,122'
+
+    
+
+    transfer = TransferCtrl(ip,port)
+
     process = StepProcess()
+    
     process.GoToGetAntenna()
+    
     process.TakeAntennaToGetTcp()
+    
+    TcpVec = transfer.GetDataFromTransfer(0,StartSignal)
+    print('TcpVec: ', TcpVec)
+    if(TcpVec == 0):
+        return
+
     process.TakeCamToGetTarget()
+    
+    PosFlange = duco.GetDucoPos(0)
+    TargetPos = transfer.GetDataFromTransfer(1,StartSignal,PosNow=PosFlange)
+    print('TargetPos: ', TargetPos)
+    if(TargetPos == 0):
+        return
+    
     process.TakeAntennaToTarget(TargetPos,TcpVec)
+    
     process.GoBackToDefault(TargetPos,TcpVec)
+
+def TransferTest():
+    # Duco机械臂的通讯地址
+    DucoIp = "192.168.1.47"
+    DucoPort = 7003
+
+    duco = DucoCtrl(DucoIp,DucoPort)
+
+    PosFlange = duco.GetDucoPos(0)
+    # 迁移ip
+    ip = '192.168.1.10'
+    # 迁移端口
+    port = 5700
+    transfer = TransferCtrl(ip,port)
+
+    StartSignal = '110,122'
+
+    # data = transfer.GetDataFromTransfer(1,StartSignal,PosNow=PosFlange)
+    data = transfer.GetDataFromTransfer(0,StartSignal)
+
+
+    print(data)
 
 if __name__ == '__main__':
 
@@ -94,4 +138,4 @@ if __name__ == '__main__':
     TestProcess()
     # StepMove()
     # ShowPos()
-
+    # TransferTest()
