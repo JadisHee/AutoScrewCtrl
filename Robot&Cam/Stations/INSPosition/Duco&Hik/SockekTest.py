@@ -19,8 +19,8 @@ TwistScrew_2 = [-0.5797485733032227, 0.3330232799053192, -0.032647453248500824, 
 TwistScrew_3 = [-0.5797485733032227, 0.9588111639022827, -0.01189726684242487, -1.5702458620071411, 0.0009518721490167081, -3.141524076461792]
 TwistScrew_4 = [-0.5797485733032227, 0.9588069915771484, 0.11019549518823624, -1.5702608823776245, 0.0009298138902522624, -3.1414954662323]
 
-
-
+PosGetScrewDown = [-0.7778072953224182, 0.0770222544670105, 0.4360876977443695, -1.5751030445098877, -0.0009758686646819115, 1.5704331398010254]
+PosTwistScrew = [-0.7979557514190674, -0.022811556234955788, 0.4742854833602905, -1.5750925540924072, -0.0009706153068691492, 1.5704277753829956]
 # process.Screw_1(GetScrew_1,TwistScrew_1)
 # time.sleep(0.5)
 # process.Screw_2(GetScrew_3,TwistScrew_3)
@@ -28,7 +28,6 @@ TwistScrew_4 = [-0.5797485733032227, 0.9588069915771484, 0.11019549518823624, -1
 # process.Screw_1(GetScrew_2,TwistScrew_2)
 # time.sleep(0.5)
 # process.Screw_2(GetScrew_4,TwistScrew_4)
-
 
 def OneStep(Command):
     set_xml.TypeData = 1
@@ -40,18 +39,38 @@ def OneStep(Command):
 
     if Command == 1:
         set_xml.ScrewStateData = "true"
-        result = process.Screw_1(GetScrew_1,TwistScrew_1,set_xml)
-    elif Command == 2:
-        set_xml.ScrewStateData = "true"
-        result = process.Screw_2(GetScrew_3,TwistScrew_3)
-    elif Command == 3:
-        result = process.Screw_1(GetScrew_2,TwistScrew_2)
-    elif Command == 4:
-        result = process.Screw_2(GetScrew_4,TwistScrew_4)
+        result = process.AutoDo(set_xml)
+
 
     # set_xml.ClampingForceData = result[0]
     # time.sleep(2)
-    return result[0]
+    if result == 0:
+        return 0
+    else:
+        return result[0]
+
+# def OneStep(Command):
+#     set_xml.TypeData = 1
+#     set_xml.SystemStatusData = "true"
+#     set_xml.CooperativeArmData = "true"
+#     set_xml.CooperativeArmCameraData = "true"
+#     set_xml.ConnectStateData = "true"
+    
+
+#     if Command == 1:
+#         set_xml.ScrewStateData = "true"
+#         result = process.Screw_1(GetScrew_1,TwistScrew_1,set_xml)
+#     elif Command == 2:
+#         set_xml.ScrewStateData = "true"
+#         result = process.Screw_2(GetScrew_3,TwistScrew_3)
+#     elif Command == 3:
+#         result = process.Screw_1(GetScrew_2,TwistScrew_2)
+#     elif Command == 4:
+#         result = process.Screw_2(GetScrew_4,TwistScrew_4)
+
+#     # set_xml.ClampingForceData = result[0]
+#     # time.sleep(2)
+#     return result[0]
 
 
 
@@ -61,7 +80,7 @@ if __name__ == '__main__':
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # 获取本地主机名
-    host = "192.168.1.100"
+    host = "192.168.1.212"
     port = 9999
 
     print("ip: ", host)
@@ -76,6 +95,7 @@ if __name__ == '__main__':
     # 建立客户端连接
     client_socket, addr = server_socket.accept()
     print('连接地址：', addr)
+    i = 0
     while True:
     
         # 接收数据
@@ -106,8 +126,12 @@ if __name__ == '__main__':
             message = str(set_xml.SetXmlData())
             client_socket.send(message.encode('utf-8'))
             #  message.encode('utf-8')
-            time.sleep(1)
+            time.sleep(0.1)
 
+        i += 1
+        if i == 4:
+            print("此阶段拧钉完成 ! ! !")
+            break
         # # 关闭连接
         # client_socket.close()
         # break

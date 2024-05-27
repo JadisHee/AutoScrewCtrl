@@ -33,19 +33,19 @@ class DanikorCtrl:
         '''
         if target_status == 0:
 
-            self.robot.set_standard_digital_out(3,0,True)
+            self.robot.set_standard_digital_out(2,0,True)
             # self.robot.set_board_io_status(5,"U_DO_03",0)
-            self.robot.set_standard_digital_out(4,1,True)
+            self.robot.set_standard_digital_out(1,1,True)
             # self.robot.set_board_io_status(5,"U_DO_04",1)
             time.sleep(1)
-            self.robot.set_standard_digital_out(4,0,True)
+            self.robot.set_standard_digital_out(1,0,True)
             return 0
         elif target_status == 1:
-            self.robot.set_standard_digital_out(4,0,True)
-            self.robot.set_standard_digital_out(3,1,True)
+            self.robot.set_standard_digital_out(1,0,True)
+            self.robot.set_standard_digital_out(2,1,True)
 
             time.sleep(1)
-            self.robot.set_standard_digital_out(3,0,True)
+            self.robot.set_standard_digital_out(2,0,True)
             return 1
 
     def VacuumCtrl(self,target_status):
@@ -95,8 +95,8 @@ class DanikorCtrl:
         '''
         if target_status == 0:
             # 通过io控制模组收回
-            self.robot.set_standard_digital_out(2,0,True)
-            self.robot.set_standard_digital_out(4,1,True)
+            self.robot.set_standard_digital_out(4,0,True)
+            self.robot.set_standard_digital_out(3,1,True)
             
             # 循环读取到位模块，若到位则正常返回，若超过5s未到位，则异常返回
             for i in range(0,5,1):
@@ -109,8 +109,8 @@ class DanikorCtrl:
                         return 2
         elif target_status == 1:
             # 通过io控制模组伸出
-            self.robot.set_standard_digital_out(4,0,True)
-            self.robot.set_standard_digital_out(2,1,True)
+            self.robot.set_standard_digital_out(3,0,True)
+            self.robot.set_standard_digital_out(4,1,True)
 
             # 循环读取到位模块，若到位则正常返回，若超过3s未到位，则异常返回
             for i in range(0,5,1):
@@ -277,7 +277,7 @@ class DanikorCtrl:
 
         return [float(TorqueData), float(AngleData), float(TimeData), int(ResultData)]
 
-    def ScrewMotorCtrl(self,CtrlMod,XmlData):
+    def ScrewMotorCtrl(self,CtrlMod,XmlData = None):
         '''
         * Function:     ScrewMotorCtrl
         * Description:  对拧钉电批进行控制
@@ -329,50 +329,72 @@ class DanikorCtrl:
         
 
         try:
-            # 连接到目标设备
-            s.connect((self.DanikorIp, self.DanikorPort))
+            if CtrlMod == 1:
+                # 连接到目标设备
+                s.connect((self.DanikorIp, self.DanikorPort))
 
-            # 发送订阅实时拧紧数据
-            byte_data_0 = bytes.fromhex(SubLiveData)
-            s.sendall(byte_data_0)
-            s.recv(1024)
+                # 发送订阅实时拧紧数据
+                byte_data_0 = bytes.fromhex(SubLiveData)
+                s.sendall(byte_data_0)
+                s.recv(1024)
 
-            # 发送订阅拧紧结果数据
-            byte_data_1 = bytes.fromhex(SubResult)
-            s.sendall(byte_data_1)
-            s.recv(1024)
+                # 发送订阅拧紧结果数据
+                byte_data_1 = bytes.fromhex(SubResult)
+                s.sendall(byte_data_1)
+                s.recv(1024)
 
-            # 发送切换模式指令
-            byte_data_2 = bytes.fromhex(SelectMod)
-            s.sendall(byte_data_2)
-            s.recv(1024)
+                # 发送切换模式指令
+                byte_data_2 = bytes.fromhex(SelectMod)
+                s.sendall(byte_data_2)
+                s.recv(1024)
 
-            # 发送电批启动指令
-            byte_data_3 = bytes.fromhex(MotorStart)
-            s.sendall(byte_data_3)   
-            data = s.recv(1024)
+                # 发送电批启动指令
+                byte_data_3 = bytes.fromhex(MotorStart)
+                s.sendall(byte_data_3)   
+                data = s.recv(1024)
 
-            while True:
-                LiveData = s.recv(1024)
-                LiveData_ = self.LiveDataDecode(LiveData)
+                while True:
+                    LiveData = s.recv(1024)
+                    LiveData_ = self.LiveDataDecode(LiveData)
 
-                if int(LiveData_[0]) == 1:
-                    break
-                if float(LiveData_[1]) != 0.0:
-                    XmlData.ClampingForceData = float(LiveData_[1])
-                    print(float(LiveData_[1]))
-                # print(LiveData_[1])
+                    if int(LiveData_[0]) == 1:
+                        break
+                    if float(LiveData_[1]) != 0.0 and XmlData != None:
+                        XmlData.ClampingForceData = float(LiveData_[1])
+                        print(float(LiveData_[1]))
+                    # print(LiveData_[1])
 
-            # 监听电批返回的数据
-            ResultData = s.recv(1024)
-            
-            Result = self.FinalResultDecode(ResultData)
+                # 监听电批返回的数据
+                ResultData = s.recv(1024)
+                
+                Result = self.FinalResultDecode(ResultData)
 
-            print(Result[0])
+                print(Result[0])
 
-            return Result
+                return Result
+            elif CtrlMod == 2:
+                # 连接到目标设备
+                s.connect((self.DanikorIp, self.DanikorPort))
 
-            # return 1
+                # 发送订阅实时拧紧数据
+                byte_data_0 = bytes.fromhex(SubLiveData)
+                s.sendall(byte_data_0)
+                s.recv(1024)
+
+                # 发送订阅拧紧结果数据
+                byte_data_1 = bytes.fromhex(SubResult)
+                s.sendall(byte_data_1)
+                s.recv(1024)
+
+                # 发送切换模式指令
+                byte_data_2 = bytes.fromhex(SelectMod)
+                s.sendall(byte_data_2)
+                s.recv(1024)
+
+                # 发送电批启动指令
+                byte_data_3 = bytes.fromhex(MotorStart)
+                s.sendall(byte_data_3)
+                return 1
             
         except Exception as e:
             print("出现了错误: ",e)

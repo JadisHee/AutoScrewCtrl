@@ -89,8 +89,69 @@ def TestProcess():
 
     process = StepProcess()
     
+    for i in range(100):
+        process.GoToGetAntenna()
+        
+        duco.DucoRobot.set_standard_digital_out(1,1,True)
+
+        process.TakeAntennaToGetTcp()
+        
+        TcpVec = transfer.GetDataFromTransfer(0,StartSignal)
+        # print('TcpVec: ', TcpVec)
+        if(TcpVec == 0):
+            return
+
+        process.TakeCamToGetTarget()
+        
+        PosFlange = duco.GetDucoPos(0)
+        TargetPos = transfer.GetDataFromTransfer(1,StartSignal,PosNow=PosFlange)
+        # print('TargetPos: ', TargetPos)
+        if(TargetPos == 0):
+            return
+        
+        process.TakeAntennaToTarget(TargetPos,TcpVec)
+        
+        # duco.DucoRobot.set_standard_digital_out(1,0,True)
+
+        time.sleep(1)
+
+        print("成功次数: ", i)
+
+        process.GoBackToDefault(TargetPos,TcpVec)
+
+        process.GoToGetAntenna()
+
+        duco.DucoRobot.set_standard_digital_out(1,0,True)
+        
+        time.sleep(2)
+
+        StepMove()
+
+def ProcessGo():
+    # Duco机械臂的通讯地址
+    DucoIp = "192.168.1.47"
+    DucoPort = 7003
+
+    duco = DucoCtrl(DucoIp,DucoPort)
+
+    # 迁移ip
+    ip = '192.168.1.10'
+    # 迁移端口
+    port = 5700
+
+    StartSignal = '110,122'
+
+    
+
+    transfer = TransferCtrl(ip,port)
+
+    process = StepProcess()
+    
+    # for i in range(100):
     process.GoToGetAntenna()
     
+    duco.DucoRobot.set_standard_digital_out(1,1,True)
+
     process.TakeAntennaToGetTcp()
     
     TcpVec = transfer.GetDataFromTransfer(0,StartSignal)
@@ -108,7 +169,21 @@ def TestProcess():
     
     process.TakeAntennaToTarget(TargetPos,TcpVec)
     
+    duco.DucoRobot.set_standard_digital_out(1,0,True)
+
+    time.sleep(2)
+
+    # print("成功次数: ", i)
+
     process.GoBackToDefault(TargetPos,TcpVec)
+
+    # process.GoToGetAntenna()
+
+    # duco.DucoRobot.set_standard_digital_out(1,0,True)
+    
+    # time.sleep(2)
+
+    # StepMove()
 
 def TransferTest():
     # Duco机械臂的通讯地址
@@ -134,8 +209,8 @@ def TransferTest():
 
 if __name__ == '__main__':
 
-    # ProcessTest()
-    TestProcess()
-    # StepMove()
+    # ProcessGo()
+    # TestProcess()
+    StepMove()
     # ShowPos()
     # TransferTest()
