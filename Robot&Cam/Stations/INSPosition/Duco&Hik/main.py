@@ -112,14 +112,17 @@ def StepMove():
     acc_joint = 0.2617993
     # 电批以正常姿态对准惯导几何中心
     TargetPos_1 = [-0.00032147308229468763, -0.7025035619735718, 0.299015611410141, 3.141592502593994, 1.9189330942026572e-06, -3.141587495803833]
+    # TargetPos_1 = [-0.00032147308229468763, -0.7025035619735718, 0.299015611410141, 3.141592502593994, 1.9189330942026572e-06, -3.141587495803833]
     # -0.8568769097328186, 0.6354405283927917, 0.17336474359035492, -0.02823464572429657, -1.5306755304336548, -0.0005614075344055891
     # -0.8580797910690308, 0.6356502771377563, 0.14294105768203735, 1.5306857824325562, -0.0032004942186176777, -1.5995079278945923
     TargetQNear_1 = [1.105727195739746, -0.4878915250301361, 2.2834084033966064, 1.3415184020996094, 1.1065014600753784, -1.5730797052383423]
     duco = DucoCtrl(DucoIp,DucoPort)
 
+
+    duco.DucoRobot.tcp_move([0,0,1],vel_move,acc_move,r=0,tool='ElectricBit',block=False)
     # duco.DucoMoveL(TargetPos_1,vel_move,acc_move,TargetQNear_1)
 
-    duco.DucoMovel(TargetPos_1,vel_move,acc_move,TargetQNear_1,'ElectricBit')
+    # duco.DucoMovel(TargetPos_1,vel_move,acc_move,TargetQNear_1,'ElectricBit')
 
 
 def DanikorTest():
@@ -134,7 +137,7 @@ def DanikorTest():
 
     danikor = DanikorCtrl(DucoIp,DucoPort,DanikorIp,DanikorPort)
 
-    # danikor.InitialAllMould()
+    danikor.InitialAllMould()
 
     # danikor.ClawCtrl(1)
 
@@ -151,7 +154,7 @@ def DanikorTest():
 
     # danikor.DriverCtrl(0)
 
-    result = danikor.ScrewMotorCtrl(2)
+    # result = danikor.ScrewMotorCtrl(2)
 
     # print(float(result[0]))
     # danikor.ScrewMotorCtrl(1)
@@ -159,7 +162,8 @@ def DanikorTest():
 def ProcessTest():
 
     process = StepProcess()
-    INSTarget = [1029.2046/1000,-1127.1646/1000,899.21655/1000,179.60883*math.pi/180,1.1996922*math.pi/180,134.37794*math.pi/180]
+    # process.GoGetScrew()
+    INSTarget = [1029.2046/1000,-1127.1646/1000,899.21655/1000,179.62177*math.pi/180,1.2740866*math.pi/180,134.41792*math.pi/180]
     process.GoStep(1,INSTarget)
 
 def Move2HikCenter():
@@ -218,7 +222,7 @@ def ShowPos():
     DanikorPort = 8888
     duco = DucoCtrl(DucoIp,DucoPort)
     # danikor = DanikorCtrl(DucoIp,DucoPort,DanikorIp,DanikorPort)
-    PosVec = duco.GetDucoPos(1)
+    PosVec = duco.GetDucoPos(0)
     Qnear = duco.GetQNear()
 
     # DPos = [0.1,0.2]
@@ -241,5 +245,5 @@ if __name__ == '__main__':
     # MainTest()
     # HikTest()
     # DanikorTest()
-    ProcessTest()
+    # ProcessTest()
     # Move2HikCenter()

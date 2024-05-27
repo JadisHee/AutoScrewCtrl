@@ -38,14 +38,14 @@ class DanikorCtrl:
             self.robot.set_standard_digital_out(1,1,True)
             # self.robot.set_board_io_status(5,"U_DO_04",1)
             time.sleep(1)
-            self.robot.set_standard_digital_out(1,0,True)
+            # self.robot.set_standard_digital_out(1,0,True)
             return 0
         elif target_status == 1:
             self.robot.set_standard_digital_out(1,0,True)
             self.robot.set_standard_digital_out(2,1,True)
 
             time.sleep(1)
-            self.robot.set_standard_digital_out(2,0,True)
+            # self.robot.set_standard_digital_out(2,0,True)
             return 1
 
     def VacuumCtrl(self,target_status):
