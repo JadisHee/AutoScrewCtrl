@@ -43,11 +43,11 @@ class StepProcess:
                     [ 0, 0, 0, 1]
                         ])
         self.ToolCenterToCamCenterTransMat_ = np.array([
-                    [ 9.99158203e-01 , 2.49422997e-02 ,3.25694214e-02 , 0.004037055],
-                    [ -2.49560079e-02 , 9.99688550e-01, 1.43886513e-05, 0.16635849733351],
-                    [ -3.25589188e-02 , -8.27179277e-04 , 9.99469476e-01, 0],
+                    [ 1, 0, 0, 0.004937055],
+                    [ 0, 1, 0, 0.16589149733351],
+                    [ 0, 0, 1, 0],
                     [ 0, 0, 0, 1]
-                         ])
+                        ])
         # ([[ 1, 0, 0, -0.000437055],
         #                  [ 0, 1, 0, 0.16615849733351],
         #                  [ 0, 0, 1, 0],
@@ -186,7 +186,33 @@ class StepProcess:
         else:
             print ("请检查相机设置 ! ! !")
             return 0
-        
+
+    def MoveToCenter_(self,mod,DPos):
+        '''
+            * Function:     MoveToCenter
+            * Description:  在识别后控制协作臂移动对准中心
+            * Inputs:
+                            mod:
+                                0: 对准相机中心
+                                1: 对准电批中心
+                            DPos: 圆心在相机中心坐标系的坐标,单位:mm
+                                list[dx,dy]
+            * Outputs:      
+            * Returns:      
+                            TargetPos:协作臂目标位姿
+            * Notes:
+        '''
+        PosNow = self.duco.GetDucoPos(1)
+        if mod == 0:
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.UnitMat)
+        elif mod == 1:
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolCenterToCamCenterTransMat_)
+        Qnear = self.duco.GetQNear()
+        print(TargetPos)
+        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,Qnear,'ElectricBit')
+
+        return TargetPos
+
     def MoveToCenter(self,mod,DPos):
         '''
             * Function:     MoveToCenter
@@ -320,9 +346,9 @@ class StepProcess:
             dist = math.sqrt(DPos[0]**2 + DPos[1]**2)
             if dist <= 0.002:
                 break
-            self.MoveToCenter(0,DPos)
+            self.MoveToCenter_(0,DPos)
         
-        TargetPos = self.MoveToCenter(1,DPos)
+        TargetPos = self.MoveToCenter_(1,DPos)
         # TargetPos[2] = TargetPos[2] - self.DownDeepth[0]
         TargetPosMat = self.tools.PosVecToPosMat(TargetPos)
 
