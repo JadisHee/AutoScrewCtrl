@@ -10,10 +10,12 @@ from DanikorCtrl import DanikorCtrl
 
 from StepProcess import StepProcess
 # 0.000237055
-ToolTransMat = np.array([[ 1, 0, 0, -0.000437055],
-                         [ 0, 1, 0, 0.16615849733351],
-                         [ 0, 0, 1, 0],
-                         [ 0, 0, 0, 1]])
+ToolTransMat = np.array([
+                    [ 1, 0, 0, 0.003137055],
+                    [ 0, 1, 0, 0.16504149733351],
+                    [ 0, 0, 1, 0],
+                    [ 0, 0, 0, 1]
+                    ])
 
 ToolTransMat_1 = np.array([[ 1, 0, 0, 0],
                          [ 0, 1, 0, 0.0500718],
@@ -112,8 +114,8 @@ def StepMove():
     vel_joint = 0.2617993
     acc_joint = 0.2617993
     # 电批以正常姿态对准惯导几何中心
-    # TargetPos_1 = [-0.00032147308229468763, -0.7025035619735718, 0.299015611410141, 3.141592502593994, 1.9189330942026572e-06, -3.141587495803833]
-    TargetPos_1 = [-0.02659669890999794, -1.255556583404541, 0.20982423424720764, 3.141592502593994, 1.9189330942026572e-06, -3.141587495803833]
+    TargetPos_1 = [-0.00032147308229468763, -0.7025035619735718, 0.299015611410141, 3.141592502593994, 1.9189330942026572e-06, -3.141587495803833]
+    # TargetPos_1 = [-0.08788929134607315, -1.0715396404266357, 0.2525094747543335, 3.130729913711548, -1.5690492391586304, -3.130744218826294]
     # -0.8568769097328186, 0.6354405283927917, 0.17336474359035492, -0.02823464572429657, -1.5306755304336548, -0.0005614075344055891
     # -0.8580797910690308, 0.6356502771377563, 0.14294105768203735, 1.5306857824325562, -0.0032004942186176777, -1.5995079278945923
     TargetQNear_1 = [1.105727195739746, -0.4878915250301361, 2.2834084033966064, 1.3415184020996094, 1.1065014600753784, -1.5730797052383423]
@@ -163,9 +165,11 @@ def DanikorTest():
 def ProcessTest():
 
     process = StepProcess()
-    process.GoGetScrew()
-    # INSTarget = [1029.2046/1000,-1127.1646/1000,899.21655/1000,179.62177*math.pi/180,1.2740866*math.pi/180,134.41792*math.pi/180]
-    # process.GoStep(4,INSTarget)
+    # process.GoGetScrew()
+    INSTarget = [1029.2046/1000,-1127.1646/1000,899.21655/1000,179.62177*math.pi/180,1.2740866*math.pi/180,134.41792*math.pi/180]
+    process.GoStep(4,INSTarget)
+
+
 
 def Move2HikCenter():
     # Duco机械臂的通讯地址
@@ -174,7 +178,7 @@ def Move2HikCenter():
     duco = DucoCtrl(DucoIp,DucoPort)
 
     # 海康相机的通讯地址
-    HikIp = "192.168.1.4"
+    HikIp = "192.168.1.3"
     HikPort = 8192
     # 通讯触发信号
     msgStart = '123'
@@ -185,7 +189,30 @@ def Move2HikCenter():
     DanikorPort = 8888
     danikor = DanikorCtrl(DucoIp,DucoPort,DanikorIp,DanikorPort)
 
+    while(True):
+        
 
+
+        result = hik.GetDataFromHik(msgStart)
+        if result != 0:
+            print ("相机反馈结果: ",result)
+            DPos = hik.GetDPosMillimeter(result[1]*2,[result[2],result[3]],11.70)
+            # DPos = [-result[1]/1000,-result[2]/1000]
+            
+            # TargetPos = hik.PosTrans(PosVec,TransMat,DPos)
+            print(DPos) 
+            dist = math.sqrt(DPos[0]**2 + DPos[1]**2)
+            if dist <= 0.001:
+                print("移动到相机中心成功")
+                break
+            PosNow = duco.GetDucoPos(1)
+            Qnear = duco.GetQNear()
+            TargetPos = hik.GetTargetPos(DPos,PosNow,UnitTransMat)
+            duco.DucoMovel(TargetPos,0.3,0.3,Qnear,'ElectricBit')
+        else:
+            print ("请检查相机设置 ! ! !")
+            return
+    
     result = hik.GetDataFromHik(msgStart)
     if result != 0:
         print ("相机反馈结果: ",result)
@@ -194,20 +221,23 @@ def Move2HikCenter():
         
         # TargetPos = hik.PosTrans(PosVec,TransMat,DPos)
         print(DPos) 
+        
+        PosNow = duco.GetDucoPos(1)
+        Qnear = duco.GetQNear()
+        TargetPos = hik.GetTargetPos(DPos,PosNow,ToolTransMat)
+        duco.DucoMovel(TargetPos,0.3,0.3,Qnear,'ElectricBit')
     else:
         print ("请检查相机设置 ! ! !")
         return
-    
-    
 
-    PosNow = duco.GetDucoPos(1)
-    TargetPosUP = PosNow.copy()
-    TargetPos = hik.GetTargetPos(DPos,PosNow,ToolTransMat)
-    Qnear = duco.GetQNear()
-    # TargetPos = [PosNow[0]+DPos[0],PosNow[1]+DPos[1],PosNow[2],PosNow[3],PosNow[4],PosNow[5]]
-    print("当前位姿为: ",PosNow)
-    print("目标位姿为: ",TargetPos)
-    duco.DucoMovel(TargetPos,0.3,0.3,Qnear,'ElectricBit')
+    # PosNow = duco.GetDucoPos(1)
+    # TargetPosUP = PosNow.copy()
+    # TargetPos = hik.GetTargetPos(DPos,PosNow,UnitTransMat)
+    # Qnear = duco.GetQNear()
+    # # TargetPos = [PosNow[0]+DPos[0],PosNow[1]+DPos[1],PosNow[2],PosNow[3],PosNow[4],PosNow[5]]
+    # print("当前位姿为: ",PosNow)
+    # print("目标位姿为: ",TargetPos)
+    # duco.DucoMovel(TargetPos,0.3,0.3,Qnear,'ElectricBit')
     # TargetPos[2] = TargetPos[2] - 0.125
     # duco.DucoMovel(TargetPos,0.2,0.2,Qnear,'ElectricBit')
     
@@ -223,7 +253,7 @@ def ShowPos():
     DanikorPort = 8888
     duco = DucoCtrl(DucoIp,DucoPort)
     # danikor = DanikorCtrl(DucoIp,DucoPort,DanikorIp,DanikorPort)
-    PosVec = duco.GetDucoPos(0)
+    PosVec = duco.GetDucoPos(1)
     Qnear = duco.GetQNear()
 
     # DPos = [0.1,0.2]

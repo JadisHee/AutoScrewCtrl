@@ -42,9 +42,15 @@ class StepProcess:
                     [ 0, 0, 1, 0],
                     [ 0, 0, 0, 1]
                         ])
-        self.ToolCenterToCamCenterTransMat_ = np.array([
+        self.ToolCenterToCamCenterTransMat_left = np.array([
                     [ 1, 0, 0, 0.004937055],
                     [ 0, 1, 0, 0.16589149733351],
+                    [ 0, 0, 1, 0],
+                    [ 0, 0, 0, 1]
+                        ])
+        self.ToolCenterToCamCenterTransMat_right = np.array([
+                    [ 1, 0, 0, 0.004937055+0.003764-0.001343],
+                    [ 0, 1, 0, 0.16589149733351+0.00287-0.0009],
                     [ 0, 0, 1, 0],
                     [ 0, 0, 0, 1]
                         ])
@@ -186,8 +192,8 @@ class StepProcess:
         else:
             print ("请检查相机设置 ! ! !")
             return 0
-
-    def MoveToCenter_(self,mod,DPos):
+    
+    def MoveToCenter_right(self,mod,DPos):
         '''
             * Function:     MoveToCenter
             * Description:  在识别后控制协作臂移动对准中心
@@ -206,7 +212,33 @@ class StepProcess:
         if mod == 0:
             TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.UnitMat)
         elif mod == 1:
-            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolCenterToCamCenterTransMat_)
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolCenterToCamCenterTransMat_right)
+        Qnear = self.duco.GetQNear()
+        print(TargetPos)
+        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,Qnear,'ElectricBit')
+
+        return TargetPos
+
+    def MoveToCenter_left(self,mod,DPos):
+        '''
+            * Function:     MoveToCenter
+            * Description:  在识别后控制协作臂移动对准中心
+            * Inputs:
+                            mod:
+                                0: 对准相机中心
+                                1: 对准电批中心
+                            DPos: 圆心在相机中心坐标系的坐标,单位:mm
+                                list[dx,dy]
+            * Outputs:      
+            * Returns:      
+                            TargetPos:协作臂目标位姿
+            * Notes:
+        '''
+        PosNow = self.duco.GetDucoPos(1)
+        if mod == 0:
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.UnitMat)
+        elif mod == 1:
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolCenterToCamCenterTransMat_left)
         Qnear = self.duco.GetQNear()
         print(TargetPos)
         self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,Qnear,'ElectricBit')
@@ -346,9 +378,9 @@ class StepProcess:
             dist = math.sqrt(DPos[0]**2 + DPos[1]**2)
             if dist <= 0.002:
                 break
-            self.MoveToCenter_(0,DPos)
+            self.MoveToCenter(0,DPos)
         
-        TargetPos = self.MoveToCenter_(1,DPos)
+        TargetPos = self.MoveToCenter(1,DPos)
         # TargetPos[2] = TargetPos[2] - self.DownDeepth[0]
         TargetPosMat = self.tools.PosVecToPosMat(TargetPos)
 
@@ -453,7 +485,7 @@ class StepProcess:
         if IsScrewOk != 1:
             print("螺钉未就位 ! ! !")
             return 0
-        
+        print("吸钉时的变换矩阵:\n",self.ToolCenterToCamCenterTransMat)
         # 控制协作臂转动到拧钉方向
         self.duco.DucoMoveJ(self.PosTwistDefault[1],self.vel_joint,self.acc_joint)
         self.duco.DucoMoveJ(self.PosTwistDefault_mid[1],self.vel_joint,self.acc_joint)
@@ -473,13 +505,20 @@ class StepProcess:
         else:
             print("步骤输入错误 ! ! !")
             return 0
+        if StepNum == 1 or StepNum == 2:
+            self.ToolCenterToCamCenterTransMat = self.ToolCenterToCamCenterTransMat_left
+        else:
+            self.ToolCenterToCamCenterTransMat = self.ToolCenterToCamCenterTransMat_right
         
+        print("拧钉时的变换矩阵:\n",self.ToolCenterToCamCenterTransMat)
         self.GoToTwistScrew()
 
+        
         if StepNum == 3:
             self.duco.DucoMoveJ(self.PosTwistPhotoFar_mid[1],self.vel_joint,self.acc_joint)
             
         elif StepNum == 4:
             self.duco.DucoMoveJ(self.PosTwistPhotoFar_mid[1],self.vel_joint,self.acc_joint)
 
+        
         self.duco.DucoMovel(self.PosTwistDefault_mid[0],self.vel_move,self.acc_move,self.PosTwistPhotoFar_3[1],'ElectricBit')

@@ -71,7 +71,7 @@ class HikCtrl:
             FeedBack = HikClient.recv(1024)
             FeedBackString = FeedBack.decode()
             if FeedBackString[0] == '1': 
-                print("检测成功! ! !")
+                # print("检测成功! ! !")
                 DataList = FeedBackString.split(";")[:-1]
 
                 UsefulData = [int(DataList[0])]
