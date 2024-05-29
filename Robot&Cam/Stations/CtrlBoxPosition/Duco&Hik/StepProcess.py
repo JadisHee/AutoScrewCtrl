@@ -1,22 +1,24 @@
 import numpy as np
 import time
 import math
+import csv
 
 from SocketCtrl import XmlData
 from HikCtrl import HikCtrl
 from DucoCtrl import DucoCtrl
 from DanikorCtrl import DanikorCtrl
-
+from CalcTools import CalcTools
 
 
 class StepProcess:
+    tools = CalcTools()
     # Duco机械臂的通讯地址
     DucoIp = "192.168.1.16"
     DucoPort = 7003
     duco = DucoCtrl(DucoIp,DucoPort)
-
+        
     # hik相机的通讯地址
-    HikIp = "192.168.1.5"
+    HikIp = "192.168.1.3"
     HikPort = 8192
     # 通讯触发信号
     msgStart = '123'
@@ -27,71 +29,78 @@ class StepProcess:
     DanikorPort = 8888
     danikor = DanikorCtrl(DucoIp,DucoPort,DanikorIp,DanikorPort)
 
+    # 螺钉顶部圆圈直径
+    ScrewCircleDiameter = 11.7
+    # 目标圆孔直径
+    TargetCircleDiameter = 32
+
     def __init__(self):
-        self.ToolTransMat = np.array([[ 1, 0, 0, -0.00160632],
-                         [ 0, 1, 0, 0.0500718],
+        # 工具坐标系位置
+        self.ToolCenterToCamCenterTransMat = np.array([
+                    [ 1, 0, 0, 0.003137055],
+                    [ 0, 1, 0, 0.16504149733351],
+                    [ 0, 0, 1, 0],
+                    [ 0, 0, 0, 1]
+                        ])
+        self.ToolCenterToCamCenterTransMat_left = np.array([
+                    [ 1, 0, 0, 0.004937055],
+                    [ 0, 1, 0, 0.16589149733351],
+                    [ 0, 0, 1, 0],
+                    [ 0, 0, 0, 1]
+                        ])
+        self.ToolCenterToCamCenterTransMat_right = np.array([
+                    [ 1, 0, 0, 0.004937055+0.003764-0.001343],
+                    [ 0, 1, 0, 0.16589149733351+0.00287-0.0009],
+                    [ 0, 0, 1, 0],
+                    [ 0, 0, 0, 1]
+                        ])
+        # ([[ 1, 0, 0, -0.000437055],
+        #                  [ 0, 1, 0, 0.16615849733351],
+        #                  [ 0, 0, 1, 0],
+        #                  [ 0, 0, 0, 1]])
+        
+        # 单位矩阵
+        self.UnitMat = np.array([
+                         [ 1, 0, 0, 0],
+                         [ 0, 1, 0, 0],
                          [ 0, 0, 1, 0],
                          [ 0, 0, 0, 1]])
 
-        self.UnitMat = np.array([[ 1, 0, 0, 0],
-                                 [ 0, 1, 0, 0],
-                                 [ 0, 0, 1, 0],
-                                 [ 0, 0, 0, 1]])
+        self.DucoKukaTransMat = np.array([  [ 0.69350914,0.72032586,0.01319006,-1.0707572 ],
+                                            [-0.72008126  ,0.69361943 ,-0.01938605 , 2.18730646],
+                                            [-0.02311231 , 0.00394696 , 0.99972512, -0.78090808],
+                                            [ 0.        ,  0.   ,       0.   ,       1.        ]])
 
         # ######### 固定示教位置 #########
-        self.PosDefault = [-0.9916632175445557, -0.07183022052049637, 0.1606786847114563, -3.141380786895752, 0.00010996363562298939, 1.5708098411560059]
-
+        # self.file_PosDefault = 'INSPosition/Duco&Hik/Pose/0_GetScrewPhoto.csv'
         # 吸钉区域
         # 参考六轴
-        self.QNearGetScrew = [0.08642122894525528, -0.18896421790122986, -2.0365021228790283, -0.9155300259590149, -1.484237790107727, -3.1383559703826904]
         # 吸顶拍照高度
-        self.PosGetScrewPhoto = [-0.9083356857299805, 0.025900205597281456, 0.14376148581504822, -3.1414151191711426, 0.00011959159019170329, 1.570803165435791]
-
-        self.PosTargetJ = [
-            # 吸钉正常位置
-            [-0.9915969967842102, -0.07178846001625061, 0.560700535774231, -3.14133358001709, 0.00012591338600032032, 1.5707948207855225],
-            # 拧钉正常位置
-            [-0.07031814754009247, 0.9917040467262268, 0.560724675655365, -3.141310214996338, 0.00013094619498588145, -0.001475528464652598],
-            # 拧钉扭转过渡位置
-            [0.24383601546287537, 0.847603976726532, 0.5615622997283936, -3.139066457748413, 0.004121103789657354, -1.5493718385696411],
-            # 拧钉扭转位置
-            [0.09962490946054459, 0.5273926258087158, 0.5608445405960083, 3.1415650844573975, -2.1984840714139864e-05, -3.1415915489196777]
-        ]
-        self.TargetJ = [
-            # 吸钉正常位置
-            [0.21218368411064148, 0.05437547340989113, -1.6194990873336792, -1.5762203931808472, -1.3589427471160889, -3.138319969177246],
-            # 拧钉正常位置
-            [-1.3601106405258179, 0.05438745766878128, -1.6194990873336792, -1.5762443542480469, -1.3589667081832886, -3.138319969177246],
-            # 拧钉扭转过渡位置
-            [-1.3601226806640625, 0.05438745766878128, -1.6194871664047241, -1.5762323141098022, 0.1889277994632721, -3.138308048248291],
-            # 拧钉扭转位置
-            [-1.3679484128952026, 0.05201457813382149, -1.6170064210891724, -1.5779101848602295, 1.7733502388000488, -3.1450791358947754]
-        ]
-        # 吸钉正常位置
-        self.PosTargetJ_0 = [-0.9915969967842102, -0.07178846001625061, 0.560700535774231, -3.14133358001709, 0.00012591338600032032, 1.5707948207855225]
-        self.TargetJ_0 = [0.21218368411064148, 0.05437547340989113, -1.6194990873336792, -1.5762203931808472, -1.3589427471160889, -3.138319969177246]
-        # 拧钉正常位置
-        self.PosTargetJ_1 = [-0.07031814754009247, 0.9917040467262268, 0.560724675655365, -3.141310214996338, 0.00013094619498588145, -0.001475528464652598]
-        self.TargetJ_1 = [-1.3601106405258179, 0.05438745766878128, -1.6194990873336792, -1.5762443542480469, -1.3589667081832886, -3.138319969177246]
-        # 拧钉扭转过渡位置
-        self.TargetJ_2 = [-1.3601226806640625, 0.05438745766878128, -1.6194871664047241, -1.5762323141098022, 0.1889277994632721, -3.138308048248291]
-        # 拧钉扭转位置
-        self.PosTargetJ_3 = [0.09962490946054459, 0.5273926258087158, 0.5608445405960083, 3.1415650844573975, -2.1984840714139864e-05, -3.1415915489196777]
-        self.TargetJ_3 = [-1.3679484128952026, 0.05201457813382149, -1.6170064210891724, -1.5779101848602295, 1.7733502388000488, -3.1450791358947754]
-        # 第二个拍照位扭转
-        self.TargetJ_4 = [-1.802412509918213, -0.060097843408584595, -1.7820771932601929, -1.2992888689041138, 1.3390898704528809, -3.144815444946289]
-
-        # 拧钉区域
-        # 参考六轴
-        self.QNearTwistScrew = [0.2291293740272522, -0.22558800876140594, -1.989296317100525, -0.9265435338020325, -1.3415416479110718, -3.1383919715881348]
-        # 拧钉拍照位置
-        self.PosTwistScrewPhoto = [
-            [0.13663356006145477, 0.9747881293296814, 0.34453698992729187, -3.1411917209625244, 0.00015040839207358658, -0.0027639823965728283],
-            [0.2663731276988983, 0.982558012008667, 0.3445827066898346, -3.1411333084106445, 0.00017464248230680823, -0.0026692578103393316],
-            [0.2613394558429718, 0.991369366645813, 0.3445833623409271, 3.141557455062866, 6.769683386664838e-05, 3.1413822174072266],
-            [0.1479903608560562, 0.950756311416626, 0.3444559724330902, 3.141585350036621, -2.805951169193577e-07, 3.1415867805480957]
-        ]
+        self.file_PosDefault = 'INSPosition/Duco&Hik/Pose/0_PosDefault.csv'
+        self.file_PosGetScrewPhoto = 'INSPosition/Duco&Hik/Pose/1_GetScrewPhoto.csv'
+        self.file_PosScrewConfirm = 'INSPosition/Duco&Hik/Pose/2_ConfermScrew.csv'
         
+        self.file_PosTwistDefault = 'INSPosition/Duco&Hik/Pose/3_TwistDefault.csv'
+        self.file_PosTwistDefault_mid = 'INSPosition/Duco&Hik/Pose/3_TwistDefault_mid.csv'
+
+        self.file_PosTwistPhotoClose_1 = 'INSPosition/Duco&Hik/Pose/4_TwistPhotoClose_1.csv'
+        self.file_PosTwistPhotoClose_2 = 'INSPosition/Duco&Hik/Pose/4_TwistPhotoClose_2.csv'
+        self.file_PosTwistPhotoFar_3 = 'INSPosition/Duco&Hik/Pose/4_TwistPhotoFar_3.csv'
+        self.file_PosTwistPhotoFar_4 = 'INSPosition/Duco&Hik/Pose/4_TwistPhotoFar_4.csv'
+        self.file_PosTwistPhotoFar_mid =  'INSPosition/Duco&Hik/Pose/4_TwistPhotoFar_mid.csv'
+
+        self.PosDefault = self.GetPosFromCsv(self.file_PosDefault)
+        self.PosGetScrewPhoto = self.GetPosFromCsv(self.file_PosGetScrewPhoto)
+        self.PosScrewConfirm = self.GetPosFromCsv(self.file_PosScrewConfirm)
+
+        self.PosTwistDefault = self.GetPosFromCsv(self.file_PosTwistDefault)
+        self.PosTwistDefault_mid = self.GetPosFromCsv(self.file_PosTwistDefault_mid)
+        
+        self.PosTwistPhotoClose_1 = self.GetPosFromCsv(self.file_PosTwistPhotoClose_1)
+        self.PosTwistPhotoClose_2 = self.GetPosFromCsv(self.file_PosTwistPhotoClose_2)
+        self.PosTwistPhotoFar_3 = self.GetPosFromCsv(self.file_PosTwistPhotoFar_3)
+        self.PosTwistPhotoFar_4 = self.GetPosFromCsv(self.file_PosTwistPhotoFar_4)
+        self.PosTwistPhotoFar_mid = self.GetPosFromCsv(self.file_PosTwistPhotoFar_mid)
         # 位移常速
         self.vel_move = 0.3
         self.acc_move = 0.5
@@ -106,381 +115,410 @@ class StepProcess:
         self.Deepth_2 = 0.005
         self.DownDeepth = [
             # 拍照位到吸钉表面高度
-            0.114,
+            0.199,
             # 吸钉再次下降高度
-            0.005,
+            0.0095,
+            # 吸钉回升的高度
+            -0.07,
+            # 吸钉检测下降高度
+            0.05,
             # 拍照位到拧钉表面高度
-            0.125
+            0.275
         ]
 
         pass
 
+    def GetPosFromCsv(self,filename):
+        '''
+        * Function:     GetPosFromCsv
+        * Description:  获取csv文件中的位姿数据
+        * Inputs:
+                        filename : 文件名
+        * Outputs:      
+        * Returns:      list:[Pos,QNear]:
+                            Pos:list[float]
+                            QNear: list[float]
+        * Notes:
+        '''
+        with open(filename, newline='') as csvfile:
+            csvreader = csv.reader(csvfile)
+            Pos = [float(value) for value in next(csvreader)]
+            QNear = [float(value) for value in next(csvreader)]
+        return [Pos,QNear]
 
-    def MoveToHikCenter(self,DPos):
-        PosNow = self.duco.GetDucoPos(1)
-        TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.UnitMat)
-        Qnear = self.duco.GetQNear()
-        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,Qnear,'ElectricBit')
-
-
-    def StepGo(self,StepNum,XmlData):
+    def ScrewConfirm(self):
+        '''
+            * Function:     ScrewConfirm
+            * Description:  确认螺钉状态
+            * Inputs:
+                            
+            * Outputs:      
+            * Returns:      bool
+                                1: 螺钉准备就绪
+                                0: 螺钉未吸上或未吸紧
+            * Notes:
+        '''
+        VacuumPressure = self.duco.DucoRobot.get_standard_digital_in(8)
+        IsThereScrew = self.duco.DucoRobot.get_standard_digital_in(7)
+        if VacuumPressure == 0 and IsThereScrew == 1:
+            print("螺钉吸附稳定! ! !")
+            return 1
+        elif VacuumPressure == 1 and IsThereScrew == 1:
+            print("螺钉吸附不稳定! ! !请检查批头末端或负压传感器! ! !")
+        else:
+            print("螺钉未吸附上! ! !")
         
-        StepNum = StepNum - 1
-        # 判断协作臂是否位于起始位姿
-        for i in range(10):
-            PosFirst = self.duco.GetDucoPos(1)
-            # 判断协作臂是否位于初始位姿附近
-            DistDefualt = math.sqrt((PosFirst[0] - self.PosDefault[0])**2 + (PosFirst[1] - self.PosDefault[1])**2 + (PosFirst[2] - self.PosDefault[2])**2)
-            if DistDefualt <= 0.1:
-                print("协作臂就位 ! ! !")
-                break
-            if i == 0:
-                print("请手动将协作臂移动至初始位置附近 ! ! !")
-            elif i == 9:
-                print("协作臂未在初始位置 ! ! !")
-                return
-            time.sleep(1)
+        return 0
 
-        # 控制协作臂前往吸顶拍照位置
-        self.duco.DucoMovel(self.PosGetScrewPhoto,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
+    def GetHikDPos(self,diameter):
+        '''
+            * Function:     GetHikDPos
+            * Description:  获取识别后圆心在相机中心坐标系的坐标,单位:mm
+            * Inputs:
+                            
+            * Outputs:      
+            * Returns:      
+                                DPos: 坐标 list[dx,dy]
+                                    dx:float
+                                    dy:float
+                                0: 相机出错
+            * Notes:
+        '''
         result = self.hik.GetDataFromHik(self.msgStart)
         if result != 0:
-            DPos = self.hik.GetDPosMillimeter(result[1]*2,[result[2],result[3]],11.94)
-        else:
-            print ("请检查相机设置 ! ! !")
-            return
-            # 获取当前姿态
-        PosNow = self.duco.GetDucoPos(1)
-        # 计算目标位置
-        TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolTransMat)
-        # 记录螺钉上方的位置
-        TargetPosUp = TargetPos.copy()
-
-        # 控制协作臂移动至螺钉上方
-        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-        # 控制协作臂移动至螺钉表面位置
-        TargetPos[2] = TargetPos[2] - self.DownDeepth[0]
-        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-        # 控制电批开始反转寻帽
-        self.danikor.ScrewMotorCtrl(2,XmlData)
-
-        # 控制协作臂下降吸钉
-        TargetPos[2] = TargetPos[2] - self.DownDeepth[1]
-        self.duco.DucoMovel(TargetPos,self.vel_end,self.acc_end,self.QNearGetScrew,'ElectricBit')
-
-        # 控制真空阀打开
-        self.danikor.VacuumCtrl(1)
-
-        # 控制协作臂上升至螺钉孔上方
-        self.duco.DucoMovel(TargetPosUp,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-        # 控制协作臂来到吸钉正常位置准备旋转
-        self.duco.DucoMovel(self.PosTargetJ[0],self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-        # 控制协作臂旋转至拧钉方向
-        self.duco.DucoMoveJ(self.TargetJ[1],self.vel_joint,self.acc_joint)
-
-        if StepNum >= 2:
-            self.duco.DucoMoveJ(self.TargetJ[2],self.vel_joint,self.acc_joint)
-            self.duco.DucoMoveJ(self.TargetJ[3],self.vel_joint,self.acc_joint)
-        
-        self.duco.DucoMovel(self.PosTwistScrewPhoto[StepNum],self.vel_move,self.acc_move,self.QNearTwistScrew,'ElectricBit')
-
-        while(True):
-            # 控制相机识别并记录螺纹孔
-            result = self.hik.GetDataFromHik(self.msgStart)
-            if result != 0:
-                DPos = self.hik.GetDPosMillimeter(result[1]*2,[result[2],result[3]],4)
-                # DPos = [-result[1]/1000,-result[2]/1000]
-            else:
-                print ("请检查相机设置 ! ! !")
-                return 0
-            dist = math.sqrt(DPos[0]**2 + DPos[1]**2)
-
-            PosNow = self.duco.GetDucoPos(1)
-            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolTransMat)
-            if dist <= 0.002:
-                break
-            self.MoveToHikCenter(DPos)
-        # 记录当前位置
-        TargetPosUp = TargetPos.copy()
-        
-        # 控制协作臂来到孔位上方
-        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearTwistScrew,'ElectricBit')
-        
-        # 控制协作臂来到孔位表面
-        TargetPos[2] = TargetPos[2] - self.DownDeepth[2]
-        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearTwistScrew,'ElectricBit')
-
-        # 控制电批气缸下降抵紧孔位
-        self.danikor.DriverCtrl(1)
-
-        # 控制电批转动拧紧螺钉
-        self.danikor.ScrewMotorCtrl(1,XmlData)
-
-        # 控制电批气缸收回
-        self.danikor.DriverCtrl(0)
-
-        # 控制协作臂回到孔位上方
-        self.duco.DucoMovel(TargetPosUp,self.vel_move,self.acc_move,self.QNearTwistScrew,'ElectricBit')
-
-        if StepNum >= 2:
-            # 协作臂回到拧钉扭转起始位
-            self.duco.DucoMovel(self.PosTargetJ[3],self.vel_move,self.acc_move,self.TargetJ_3,'ElectricBit')
-            
-            # 协作臂转回拧钉正常起始位
-            self.duco.DucoMoveJ(self.TargetJ[2],self.vel_joint,self.acc_joint)
-            self.duco.DucoMoveJ(self.TargetJ[1],self.vel_joint,self.acc_joint)            
-        else:
-            self.duco.DucoMovel(self.PosTargetJ[1],self.vel_move,self.acc_move,self.TargetJ[1],'ElectricBit')
-    
-                # 协作臂回到吸钉正常起始位
-        self.duco.DucoMoveJ(self.TargetJ[0],self.vel_joint,self.acc_joint)
-
-        # 协作臂回到默认位置
-        self.duco.DucoMovel(self.PosDefault,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-
-    def AutoDo(self,XmlData):
-        
-        while(True):
-            PosFirst = self.duco.GetDucoPos(1)
-            # 判断协作臂是否位于初始位姿附近
-            DistDefualt = math.sqrt((PosFirst[0] - self.PosDefault[0])**2 + (PosFirst[1] - self.PosDefault[1])**2 + (PosFirst[2] - self.PosDefault[2])**2)
-        
-            if DistDefualt <= 0.1:
-                break
-            else:
-                print("请手动将协作臂移动至初始位置附近 ! ! !")
-
-        # 控制协作臂先去拍照位置
-        TargetPos = self.duco.GetDucoPos(1)
-        TargetPos[2] = TargetPos[2] + 0.4
-        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-        self.duco.DucoMoveJ(self.TargetJ_1,self.vel_joint,self.acc_joint)
-        
-        self.hik.SetHikSwitchPlan('switch','FindHole')
-        TargetPoses = [[],[],[],[]]
-
-        for i in range(4):
-            if i ==  2:
-                self.duco.DucoMoveJ(self.TargetJ_4,self.vel_joint,self.acc_joint)
-
-            self.duco.DucoMovel(self.PosTwistScrewPhoto[i],self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-            # 控制螺钉
-            
-            while(True):
-
-                # 控制相机识别并记录螺纹孔
-                result = self.hik.GetDataFromHik(self.msgStart)
-                if result != 0:
-                    DPos = self.hik.GetDPosMillimeter(result[1]*2,[result[2],result[3]],4)
-                    # DPos = [-result[1]/1000,-result[2]/1000]
-                else:
-                    print ("请检查相机设置 ! ! !")
-                    return 0
-                dist = math.sqrt(DPos[0]**2 + DPos[1]**2)
-
-                PosNow = self.duco.GetDucoPos(1)
-                TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolTransMat)
-                
-
-                if dist <= 0.002:
-                    break
-
-                self.MoveToHikCenter(DPos)
-
-            TargetPoses[i].extend(TargetPos)
-        
-        # 协作臂回到拧钉扭转起始位
-        self.duco.DucoMovel(self.PosTargetJ_3,self.vel_move,self.acc_move,self.TargetJ_3,'ElectricBit')
-        
-        # 协作臂转回拧钉正常起始位
-        self.duco.DucoMoveJ(self.TargetJ_2,self.vel_joint,self.acc_joint)
-        self.duco.DucoMoveJ(self.TargetJ_1,self.vel_joint,self.acc_joint)
-
-        # 协作臂回到吸钉正常起始位
-        self.duco.DucoMoveJ(self.TargetJ_0,self.vel_joint,self.acc_joint)
-
-        # 协作臂回到默认位置
-        self.duco.DucoMovel(self.PosDefault,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-        # 切换相机识别方案为取钉
-        self.hik.SetHikSwitchPlan('switch','GetScrew')
-        for i in range(4):
-            # 控制协作臂来到拍照位置
-            self.duco.DucoMovel(self.PosGetScrewPhoto,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-            result = self.hik.GetDataFromHik(self.msgStart)
-            if result != 0:
-                DPos = self.hik.GetDPosMillimeter(result[1]*2,[result[2],result[3]],11.94)
-            else:
-                print ("请检查相机设置 ! ! !")
-                return
-                # 获取当前姿态
-            PosNow = self.duco.GetDucoPos(1)
-            # 计算目标位置
-            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolTransMat)
-            # 记录螺钉上方的位置
-            TargetPosUp = TargetPos.copy()
-
-            # 控制协作臂移动至螺钉上方
-            self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-            # 控制协作臂移动至螺钉表面位置
-            TargetPos[2] = TargetPos[2] - self.Deepth_1
-            self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-            # 控制电批开始反转寻帽
-            self.danikor.ScrewMotorCtrl(2,XmlData)
-
-            # 控制协作臂下降吸钉
-            TargetPos[2] = TargetPos[2] - self.Deepth_2
-            self.duco.DucoMovel(TargetPos,self.vel_end,self.acc_end,self.QNearGetScrew,'ElectricBit')
-
-            # 控制真空阀打开
-            self.danikor.VacuumCtrl(1)
-
-            # 控制协作臂上升至螺钉孔上方
-            self.duco.DucoMovel(TargetPosUp,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-            # 协作臂来到初始位置
-            # self.duco.DucoMovel(self.PosDefault,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-            # 控制协作臂来到吸顶正常位置
-            TargetPos = self.duco.GetDucoPos(1)
-            TargetPos[2] = TargetPos[2] + 0.4
-            self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-            
-            # 控制协作臂来到拧钉正常位置
-            self.duco.DucoMoveJ(self.TargetJ_1,self.vel_joint,self.acc_joint)
-
-            if i >= 2:
-                self.duco.DucoMoveJ(self.TargetJ_2,self.vel_joint,self.acc_joint)
-                self.duco.DucoMoveJ(self.TargetJ_3,self.vel_joint,self.acc_joint)
-
-            self.duco.DucoMovel(TargetPoses[i],self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-            TargetPos = TargetPoses[i].copy()
-            
-            TargetPos[2] = TargetPos[2] - 0.125
-            self.duco.DucoMovel(TargetPoses[i],self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-            self.danikor.DriverCtrl(1)
-
-            self.danikor.ScrewMotorCtrl(1,XmlData)
-
-            self.duco.DucoMovel(TargetPoses[i],self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-            if i >= 2:
-
-                # 协作臂回到拧钉扭转起始位
-                self.duco.DucoMovel(self.PosTargetJ_3,self.vel_move,self.acc_move,self.TargetJ_3,'ElectricBit')
-                
-                # 协作臂转回拧钉正常起始位
-                self.duco.DucoMoveJ(self.TargetJ_2,self.vel_joint,self.acc_joint)
-                self.duco.DucoMoveJ(self.TargetJ_1,self.vel_joint,self.acc_joint)            
-            else:
-                self.duco.DucoMovel(self.PosTargetJ_1,self.vel_move,self.acc_move,self.TargetJ_1,'ElectricBit')
-        
-                    # 协作臂回到吸钉正常起始位
-            self.duco.DucoMoveJ(self.TargetJ_0,self.vel_joint,self.acc_joint)
-
-            # 协作臂回到默认位置
-            self.duco.DucoMovel(self.PosDefault,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-        
-        return
-        # ------------------------------------------------------------------------------------------------------------------------------------------------------------
-        # 协作臂去吸钉拍照位置
-        duco.DucoMovel(self.PosGetScrewPhoto,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-            
-        # 控制相机切换为螺钉识别方案
-        hik.SetHikSwitchPlan('switch','GetScrew')
-
-        # 控制相机识别螺钉
-        result = hik.GetDataFromHik(msgStart)
-        if result != 0:
-            DPos = hik.GetDPosMillimeter(result[1]*2,[result[2],result[3]],11.94)
-        else:
-            print ("请检查相机设置 ! ! !")
-            return
-        
-            # 获取当前姿态
-            PosNow = duco.GetDucoPos(1)
-            # 计算目标位置
-            TargetPos = hik.GetTargetPos(DPos,PosNow,self.ToolTransMat)
-            # 记录螺钉上方的位置
-            TargetPosUp = TargetPos.copy()
-
-            # 控制协作臂移动至螺钉上方
-            duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-            # 控制协作臂移动至螺钉表面位置
-            TargetPos[2] = TargetPos[2] - self.Deepth_1
-            duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-            # 控制电批开始反转寻帽
-            danikor.ScrewMotorCtrl(2,XmlData)
-
-            # 控制协作臂下降吸钉
-            TargetPos[2] = TargetPos[2] - self.Deepth_2
-            duco.DucoMovel(TargetPos,self.vel_end,self.acc_end,self.QNearGetScrew,'ElectricBit')
-
-            # 控制真空阀打开
-            danikor.VacuumCtrl(1)
-
-            # 控制协作臂上升至螺钉孔上方
-            duco.DucoMovel(TargetPosUp,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
-
-        # 控制协作臂来到拧钉拍照位置
-        duco.DucoMovel(self.PosTwistScrewPhoto,self.vel_move,self.acc_move,self.QNearTwistScrew,'ElectricBit')
-
-        # 控制相机切换为螺钉识别方案
-        hik.SetHikSwitchPlan('switch','FindHole')
-
-        # 控制相机识别螺钉
-        result = hik.GetDataFromHik(msgStart)
-        if result != 0:
-            DPos = hik.GetDPosMillimeter(result[1]*2,[result[2],result[3]],5.4)
-            # DPos = [-result[1]/1000,-result[2]/1000]
+            # print ("相机反馈结果: ",result)
+            DPos = self.hik.GetDPosMillimeter(result[1]*2,[result[2],result[3]],diameter)
+            return DPos
         else:
             print ("请检查相机设置 ! ! !")
             return 0
+    
+    def MoveToCenter_right(self,mod,DPos):
+        '''
+            * Function:     MoveToCenter
+            * Description:  在识别后控制协作臂移动对准中心
+            * Inputs:
+                            mod:
+                                0: 对准相机中心
+                                1: 对准电批中心
+                            DPos: 圆心在相机中心坐标系的坐标,单位:mm
+                                list[dx,dy]
+            * Outputs:      
+            * Returns:      
+                            TargetPos:协作臂目标位姿
+            * Notes:
+        '''
+        PosNow = self.duco.GetDucoPos(1)
+        if mod == 0:
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.UnitMat)
+        elif mod == 1:
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolCenterToCamCenterTransMat_right)
+        Qnear = self.duco.GetQNear()
+        print(TargetPos)
+        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,Qnear,'ElectricBit')
+
+        return TargetPos
+
+    def MoveToCenter_left(self,mod,DPos):
+        '''
+            * Function:     MoveToCenter
+            * Description:  在识别后控制协作臂移动对准中心
+            * Inputs:
+                            mod:
+                                0: 对准相机中心
+                                1: 对准电批中心
+                            DPos: 圆心在相机中心坐标系的坐标,单位:mm
+                                list[dx,dy]
+            * Outputs:      
+            * Returns:      
+                            TargetPos:协作臂目标位姿
+            * Notes:
+        '''
+        PosNow = self.duco.GetDucoPos(1)
+        if mod == 0:
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.UnitMat)
+        elif mod == 1:
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolCenterToCamCenterTransMat_left)
+        Qnear = self.duco.GetQNear()
+        print(TargetPos)
+        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,Qnear,'ElectricBit')
+
+        return TargetPos
+
+    def MoveToCenter(self,mod,DPos):
+        '''
+            * Function:     MoveToCenter
+            * Description:  在识别后控制协作臂移动对准中心
+            * Inputs:
+                            mod:
+                                0: 对准相机中心
+                                1: 对准电批中心
+                            DPos: 圆心在相机中心坐标系的坐标,单位:mm
+                                list[dx,dy]
+            * Outputs:      
+            * Returns:      
+                            TargetPos:协作臂目标位姿
+            * Notes:
+        '''
+        PosNow = self.duco.GetDucoPos(1)
+        if mod == 0:
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.UnitMat)
+        elif mod == 1:
+            TargetPos = self.hik.GetTargetPos(DPos,PosNow,self.ToolCenterToCamCenterTransMat)
+        Qnear = self.duco.GetQNear()
+        print(TargetPos)
+        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,Qnear,'ElectricBit')
+
+        return TargetPos
+
+    def GoGetScrew(self):
+        '''
+        * Function:     GoGetScrew
+        * Description:  前往获取螺钉
+        * Inputs:
+                            
+        * Outputs:      
+        * Returns:      
+                        IsScrewOk: bool
+                            1: 螺钉准备就绪
+                            0: 螺钉未吸上或未吸紧
+        * Notes:
+        '''
+        # 获取默认位置
+        PosStart = self.PosGetScrewPhoto
+        # 判断机械臂是否位于初始位姿附近
+        PosFirst = self.duco.GetDucoPos(1)
+        DistDefualt = math.sqrt((PosFirst[0] - PosStart[0][0])**2 + (PosFirst[1] - PosStart[0][1])**2 + (PosFirst[2] - PosStart[0][2])**2)
+        if DistDefualt > 0.001:
+            print("dist: ", DistDefualt)
+            print("机械臂未就位 ! ! !")
+            return 0 
+        time.sleep(1)
+
+        IsSwitchPlanSuccessful = self.hik.SetHikSwitchPlan('switch','FindScrew-M8-6Angle')
+
+        if IsSwitchPlanSuccessful == 0:
+            return 0
         
-        # 获取当前姿态
-        PosNow = duco.GetDucoPos(1)
-        # 计算目标位置
-        TargetPos = hik.GetTargetPos(DPos,PosNow,self.ToolTransMat)
+        # 将相机移动至目标中心，直到接近中心后退出循环
+        while(True):
+            DPos = self.GetHikDPos(self.ScrewCircleDiameter)
+            dist = math.sqrt(DPos[0]**2 + DPos[1]**2)
+            if dist <= 0.002:
+                break
+            self.MoveToCenter(0,DPos)
 
-        # 控制协作臂来到螺纹孔上方
-        duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,self.QNearTwistScrew,'ElectricBit')
+        TargetPos = self.MoveToCenter(1,DPos)
+        TargetPos[2] = TargetPos[2] - self.DownDeepth[0]
+
+        # 控制机械臂下降至螺帽上方
+        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,PosStart[1],'ElectricBit')
+
+        # 控制电批反拧寻帽
+        self.danikor.ScrewMotorCtrl(2)
+
         
-        # 控制电批模组伸出
-        danikor.DriverCtrl(1)
+        # 控制机械臂下降寻帽子
+        TargetPos[2] = TargetPos[2] - self.DownDeepth[1]
+        self.duco.DucoMovel(TargetPos,self.vel_end,self.acc_end,PosStart[1],'ElectricBit')
 
-        # 控制电批拧钉
-        result = danikor.ScrewMotorCtrl(1,XmlData)
+        # 打开真空阀吸钉
+        self.danikor.VacuumCtrl(1)
 
-        # 控制电批模组收回
-        danikor.DriverCtrl(0)
+        # 控制夹爪闭合
+        self.danikor.ClawCtrl(0)
 
-        # 控制电批回到初始默认位置
-        duco.DucoMovel(self.PosDefault,self.vel_move,self.acc_move,self.QNearGetScrew,'ElectricBit')
+        time.sleep(1)
 
-        # 初始化电批所有内容
-        danikor.InitialAllMould()
+        # 控制机械臂抬起
+        TargetPos[2] = TargetPos[2] - self.DownDeepth[2]
+        self.duco.DucoMovel(TargetPos,self.vel_end,self.acc_end,PosStart[1],'ElectricBit')
 
-        return result
+        # 控制机械臂前往吸钉确认位置
+        TargetPos = self.PosScrewConfirm[0].copy()
+        QNear = self.PosScrewConfirm[1].copy()
+        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,QNear,'ElectricBit')
+        
+        # 控制机械臂下降至吸钉检测位置
+        GoDown = TargetPos.copy()
+        GoDown[2] = GoDown[2] - self.DownDeepth[3]
+        self.duco.DucoMovel(GoDown,self.vel_move,self.acc_move,QNear,'ElectricBit')
+
+        time.sleep(0.5)
+        IsScrewOk = self.ScrewConfirm()
+        time.sleep(0.5)
+        self.duco.DucoMovel(TargetPos,self.vel_move,self.acc_move,QNear,'ElectricBit')
+
+        self.duco.DucoMovel(self.PosDefault[0],self.vel_move,self.acc_move,self.PosDefault[1],'ElectricBit')
+        
+        return IsScrewOk
 
 
+    def GetHikPlanB(self):
+        # 控制相机切换方案
+        IsSwitchPlanSuccessful = self.hik.SetHikSwitchPlan('switch','FindCircle-M8-6Angle_PlanB')
+        if IsSwitchPlanSuccessful == 0:
+            return 0
+        result = self.hik.GetDataFromHik(self.msgStart)
 
+        print(result)
+        DPos = [float(result[1])/1000,float(result[2])/1000]
 
+        return DPos
 
+    def GoToTwistScrew(self):
+        # 控制相机切换方案
+        IsSwitchPlanSuccessful = self.hik.SetHikSwitchPlan('switch','FindCircle-M8-6Angle')
+        if IsSwitchPlanSuccessful == 0:
+            return 0
+        
+        # 将相机移动至目标中心，直到接近中心后退出循环
+        while(True):
+            DPos = self.GetHikDPos(self.TargetCircleDiameter)
+            dist = math.sqrt(DPos[0]**2 + DPos[1]**2)
+            if dist <= 0.002:
+                break
+            self.MoveToCenter(0,DPos)
+        
+        TargetPos = self.MoveToCenter(1,DPos)
+        # TargetPos[2] = TargetPos[2] - self.DownDeepth[0]
+        TargetPosMat = self.tools.PosVecToPosMat(TargetPos)
 
+        # TargetUp --> Target
+        V7 = [0,0,0.175,0,0,0]
+        T7 = self.tools.PosVecToPosMat(V7)
 
+        V8 = [0,0,0.275,0,0,0]
+        T8 = self.tools.PosVecToPosMat(V8)
 
+        TargetPosUp = TargetPos.copy()
+        TargetPosSlowDownMat = np.dot(TargetPosMat,T7)
+        TargetPosSlowDown = self.tools.PosMatToPosVec(TargetPosSlowDownMat)
 
+        TargetPosMat = np.dot(TargetPosMat,T8)
+        TargetPos = self.tools.PosMatToPosVec(TargetPosMat)
 
+        # 控制机械臂前进至螺纹孔上方减速位置上
+        self.duco.DucoMovel(TargetPosSlowDown,self.vel_move,self.acc_move,self.PosTwistPhotoFar_mid[1],'ElectricBit')
 
+        # 控制机械臂前进至螺纹孔
+        self.duco.DucoMovel(TargetPos,self.vel_end,self.acc_end,self.PosTwistPhotoFar_mid[1],'ElectricBit')
 
+        # 控制夹爪张开
+        self.danikor.ClawCtrl(1)
+
+        # 控制批头伸出
+        self.danikor.DriverCtrl(1)
+
+        # 控制电批拧紧
+        self.danikor.ScrewMotorCtrl(1)
+
+        # 控制批头收回
+        self.danikor.DriverCtrl(0)
+        
+        # 控制电批模组返回安全位置
+        self.duco.DucoMovel(TargetPosUp,self.vel_move,self.acc_move,self.PosTwistPhotoFar_mid[1],'ElectricBit')
+
+        # 控制电批模组初始化
+        self.danikor.InitialAllMould()
+
+        return 1
+
+        
+    def FromTargetToBit(self,StepNum,TargetPos):
+        # Duco -- > Kuka
+        T1 = self.DucoKukaTransMat.copy()
+        
+        # Kuka --> TargetKuka
+        V2 = TargetPos.copy()
+        T2 = self.tools.PosVecToPosMat(V2)
+
+        # TargetKuka --> BitRot
+        if StepNum <= 2:
+            V3 = [0,0,0,90*math.pi/180,-90*math.pi/180,0]
+        else:
+            V3 = [0,0,0,90*math.pi/180,90*math.pi/180,0]
+        T3 = self.tools.PosVecToPosMat(V3)
+
+        T4 = np.dot(T2,T3)
+
+        # Duco --> BitTarget
+        T5 = np.dot(T1,T4)
+        V5 = self.tools.PosMatToPosVec(T5)
+
+        if StepNum == 1:
+            PhotoPos = self.PosTwistPhotoClose_1[0].copy()
+        elif StepNum == 2:
+            PhotoPos = self.PosTwistPhotoClose_2[0].copy()
+        elif StepNum == 3:
+            PhotoPos = self.PosTwistPhotoFar_3[0].copy()
+        elif StepNum == 4:
+            PhotoPos = self.PosTwistPhotoFar_4[0].copy()    
+
+        print("原拍照位为:", PhotoPos)
+        PhotoPos[3:] = V5[3:]
+        print("变换后拍照位为: ",PhotoPos)
+        return PhotoPos
+
+    def GoStep(self,StepNum,INSTarget):
+        # 获取默认位置
+        PosStart = self.PosDefault
+        # 判断机械臂是否位于初始位姿附近
+        PosFirst = self.duco.GetDucoPos(1)
+        DistDefualt = math.sqrt((PosFirst[0] - PosStart[0][0])**2 + (PosFirst[1] - PosStart[0][1])**2 + (PosFirst[2] - PosStart[0][2])**2)
+        if DistDefualt > 0.001:
+            print("dist: ", DistDefualt)
+            print("机械臂未就位 ! ! !")
+            return 0 
+        time.sleep(1)
+
+        print("电批模组初始化中 ! ! !")
+        # 控制电批模组初始化
+        self.danikor.InitialAllMould()
+        print("电批模组初始化完成 ! ! !")
+
+        # 控制机械臂移动至拍照位置附近
+        self.duco.DucoMovel(self.PosGetScrewPhoto[0],self.vel_move,self.acc_move,self.PosGetScrewPhoto[1],'ElectricBit')
+
+        # 判断吸钉是否就绪
+        IsScrewOk = self.GoGetScrew()
+        if IsScrewOk != 1:
+            print("螺钉未就位 ! ! !")
+            return 0
+        print("吸钉时的变换矩阵:\n",self.ToolCenterToCamCenterTransMat)
+        # 控制协作臂转动到拧钉方向
+        self.duco.DucoMoveJ(self.PosTwistDefault[1],self.vel_joint,self.acc_joint)
+        self.duco.DucoMoveJ(self.PosTwistDefault_mid[1],self.vel_joint,self.acc_joint)
+
+        PosPhoto = self.FromTargetToBit(StepNum,INSTarget)
+        # 控制协作臂来到拍照位
+        if StepNum == 1:
+            self.duco.DucoMovel(PosPhoto,self.vel_move,self.acc_move,self.PosTwistPhotoClose_1[1],'ElectricBit')
+        elif StepNum == 2:
+            self.duco.DucoMovel(PosPhoto,self.vel_move,self.acc_move,self.PosTwistPhotoClose_2[1],'ElectricBit')
+        elif StepNum == 3:
+            self.duco.DucoMoveJ(self.PosTwistPhotoFar_mid[1],self.vel_joint,self.acc_joint)
+            self.duco.DucoMovel(PosPhoto,self.vel_move/3,self.acc_move/3,self.PosTwistPhotoFar_3[1],'ElectricBit')
+        elif StepNum == 4:
+            self.duco.DucoMoveJ(self.PosTwistPhotoFar_mid[1],self.vel_joint,self.acc_joint)
+            self.duco.DucoMovel(PosPhoto,self.vel_move/3,self.acc_move/3,self.PosTwistPhotoFar_4[1],'ElectricBit')
+        else:
+            print("步骤输入错误 ! ! !")
+            return 0
+        if StepNum == 1 or StepNum == 2:
+            self.ToolCenterToCamCenterTransMat = self.ToolCenterToCamCenterTransMat_left
+        else:
+            self.ToolCenterToCamCenterTransMat = self.ToolCenterToCamCenterTransMat_right
+        
+        print("拧钉时的变换矩阵:\n",self.ToolCenterToCamCenterTransMat)
+        self.GoToTwistScrew()
+
+        
+        if StepNum == 3:
+            self.duco.DucoMoveJ(self.PosTwistPhotoFar_mid[1],self.vel_joint,self.acc_joint)
+            
+        elif StepNum == 4:
+            self.duco.DucoMoveJ(self.PosTwistPhotoFar_mid[1],self.vel_joint,self.acc_joint)
+
+        
+        self.duco.DucoMovel(self.PosTwistDefault_mid[0],self.vel_move,self.acc_move,self.PosTwistPhotoFar_3[1],'ElectricBit')
