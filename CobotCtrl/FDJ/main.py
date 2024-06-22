@@ -50,7 +50,6 @@ def cam_ctrler():
     while True:
         print("cam_ctrler: 等待触发信号 ! ! !")
         data = cobot.recv(1024).decode('utf-8')
-        # print("收到的信息: ", data)
         # 切换方案
         IsSwitchPlanSuccessful = hik.SetHikSwitchPlan('switch', data)
         if IsSwitchPlanSuccessful == 0:
@@ -66,21 +65,12 @@ def cam_ctrler():
             DPos = hik.GetHikDPos(M4HoleDiameter)
         
         if DPos != 0:
-            print("没寄")
             str_DPos = '(' + str(DPos[0]) + ',' + str(DPos[1]) + ')'
-        # print("cam_ctrler: DPos: ", str_DPos)
             cobot.sendall(str_DPos.encode('utf-8'))
         else:
             str_DPos = '(0,0)'
-            print("寄",str_DPos)
             cobot.sendall(str_DPos.encode('utf-8'))
 
-        # # 将相机移动至目标中心，直到接近中心后退出循环
-        # while True:
-        #     DPos = hik.GetHikDPos(M6Diameter)
-        #     dist = math.sqrt(DPos[0] ** 2 + DPos[1] ** 2)
-        #     if dist <= 0.002:
-        #         break
 
 def bit_ctrler():
     # 创建socket对象
@@ -124,39 +114,40 @@ def py_ctrler():
 
     # 设置最大连接数，超过后排队
     py_server.listen(2)
-    print('py_ctrler: 等待客户端连接 ! ! !')
+    print('py_ctrler: 等待协作臂连接 ! ! !')
 
     cobot, addr_B = py_server.accept()
     print(f"py_ctrler: 协作臂已连接，地址: {addr_B}")
 
-    ctrl_system, addr_A = py_server.accept()
-    print(f"py_ctrler: 主控系统已连接，地址: {addr_A}")
-    
-    
+    # ctrl_system, addr_A = py_server.accept()
+    # print(f"py_ctrler: 主控系统已连接，地址: {addr_A}")
 
     while True:
-        print("py_ctrler: 等待主控系统指令 ! ! !")
-        data = ctrl_system.recv(1024).decode('utf-8')
-        cobot.sendall(data.encode('utf-8'))
-        print("py_ctrler: 指定发送 ", data)
-        # end_signal = cobot.recv(1024).decode('utf-8')
-        # print("EndSignal: ", end_signal)
-        # 控制从快换处取批头
-        # if data == "GM4" or data == "GM6":
-            
-        #     if end_signal != "GetBitFinished":
-        #         duco.DucoStop()     
+        print("py_ctrler: 等待主控系统连接 ! ! !")
+
+        ctrl_system, addr_A = py_server.accept()
+        print(f"py_ctrler: 主控系统已连接，地址: {addr_A}")
+
+        try:
+            while True:
+                print("py_ctrler: 等待主控系统指令 ! ! !")
+                data = ctrl_system.recv(1024).decode('utf-8')
+                if not data:  # 检查是否收到空数据，表示客户端已断开连接
+                    print("py_ctrler: 主控系统断开连接")
+                    break
+                cobot.sendall(data.encode('utf-8'))
+                print("py_ctrler: 指定发送 ", data)
+        except Exception as e:
+            print(f"py_ctrler: 主控系统通信错误: {e}")
         
-        # # 获取螺钉
-        # elif data == "GScrew":
-            
-        #     if end_signal != "GetScrewFinished":
-        #         duco.DucoStop()
+        # 关闭当前主控系统连接，并重新等待
+        ctrl_system.close()
 
-        # elif data == "first" or data == "second" or data == "third" or data == "fourth":
-        #     if end_signal != data + "Finished":
-        #         duco.DucoStop()
-
+        # print("py_ctrler: 等待主控系统指令 ! ! !")
+        # data = ctrl_system.recv(1024).decode('utf-8')
+        # cobot.sendall(data.encode('utf-8'))
+        # print("py_ctrler: 指定发送 ", data)
+       
 
 def thread_ctrler():
     py_thread = threading.Thread(target=py_ctrler)
