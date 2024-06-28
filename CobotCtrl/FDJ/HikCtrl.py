@@ -66,10 +66,10 @@ class HikCtrl:
             data = str(data, 'utf-8')
             # print(data[0])
             if data == str('ok'):
-                print('成功切换至方案： ', PlanName)
+                # print('成功切换至方案： ', PlanName)
                 return 1
             else:
-                print('切换方案失败')
+                # print('切换方案失败')
                 return 0
 
     def GetDataFromHik(self, StartSignal):

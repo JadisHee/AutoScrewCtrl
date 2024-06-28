@@ -1,11 +1,16 @@
 import socket
 import threading
 import math
+import time
 
 from DucoCtrl import DucoCtrl
 from DanikorCtrl import DanikorCtrl
 from HikCtrl import HikCtrl
+from SocketCtrl import CommunicateData
+import xml.etree.ElementTree as ET
 
+
+xml_data = CommunicateData()
 
 duco_ip = "192.168.1.16"
 duco_port = 7003
@@ -19,7 +24,8 @@ hik_ip = "192.168.1.17"
 hik_port = 8192
 hik = HikCtrl(hik_ip, hik_port)
 
-host = '192.168.1.225'
+# host = '192.168.18.65'
+host = '192.168.1.100'
 py_port = 9999
 
 cam_port = 9995
@@ -30,6 +36,45 @@ M6ScrewDiameter = 8.80
 M6HoleDiameter = 14.12
 M4ScrewDiameter = 6.10
 M4HoleDiameter = 14.12
+
+
+# def cam_ctrler_():
+#     # 创建socket对象
+#     cam_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+#     # 绑定端口
+#     cam_server.bind((host,cam_port))
+
+#     # 设置最大连接数，超过后排队
+#     cam_server.listen(1)
+#     print('cam_ctrler: 等待协作臂连接 ! ! !')
+
+#     cobot, addr_B = cam_server.accept()
+#     print(f"cam_ctrler: 协作臂已连接，地址: {addr_B}")
+    
+#     while True:
+#         print("cam_ctrler: 等待切换方案的信号 ! ! !")
+#         data = cobot.recv(1024).decode('utf-8')
+#         IsSwitchPlanSuccessful = hik.SetHikSwitchPlan('switch', data)
+#         if IsSwitchPlanSuccessful == 0:
+#             print("cam_ctrler: 切换方案失败 ! ! !")
+#             cobot.sendall("switch failed".encode('utf-8'))
+#         else:
+#             print("cam_ctrler: 成功切换到方案 " + str(data) + " ! ! !")
+#             while True:
+#                 print("cam_ctrler:  " + str(data) +" 等待检测触发检测指令")
+#                 data_ = cobot.recv(1024).decode('utf-8')
+#                 if data_ == "check":
+#                     DPos = hik.GetHikDPos(M8ScrewDiameter)
+#                     if DPos != 0:
+#                         str_DPos = '(' + str(DPos[0]) + ',' + str(DPos[1]) + ')'
+#                         cobot.sendall(str_DPos.encode('utf-8'))
+#                     else:
+#                         str_DPos = '(0,0)'
+#                         cobot.sendall(str_DPos.encode('utf-8'))
+#                         break
+#                 elif data_ == "check_over":
+#                     break
 
 
 def cam_ctrler():
@@ -50,6 +95,7 @@ def cam_ctrler():
     while True:
         print("cam_ctrler: 等待触发信号 ! ! !")
         data = cobot.recv(1024).decode('utf-8')
+        
         # 切换方案
         IsSwitchPlanSuccessful = hik.SetHikSwitchPlan('switch', data)
         if IsSwitchPlanSuccessful == 0:
@@ -97,12 +143,36 @@ def bit_ctrler():
             danikor.ScrewMotorCtrl(2)
         elif data == "M6_rot_bit":
             result = danikor.ScrewMotorCtrl(3)
-            cobot.sendall(str(result[0]).encode('utf-8'))
-            print('bit_ctrler: 拧紧力矩为 ', result[0], "Nm")
+            if result == 0:
+                print('bit_ctrler: 力矩返回失败，请从电批控制器中查看最终力矩！！')
+                time.sleep(30)
+                cobot.sendall(str(0).encode('utf-8'))
+            else:
+                print('bit_ctrler: 拧紧力矩为 ', result[0], "Nm")
+                cobot.sendall(str(result[0]).encode('utf-8'))
+            
         elif data == "M4_rot_bit":
             result = danikor.ScrewMotorCtrl(1)
-            cobot.sendall(str(result[0]).encode('utf-8'))
+            if result == 0:
+                print('bit_ctrler: 力矩返回失败，请从电批控制器中查看最终力矩！！')
+                time.sleep(30)
+                cobot.sendall(str(0).encode('utf-8'))
+            else:
+                print('bit_ctrler: 拧紧力矩为 ', result[0], "Nm")
+                cobot.sendall(str(result[0]).encode('utf-8'))
+
+
+def danikor_test(mod):
+    while(1):
+        result = danikor.ScrewMotorCtrl(mod)
+        print('result: ', result)
+        if result == 0:
+            print('bit_ctrler: 力矩返回失败，请从电批控制器中查看最终力矩！！')
+            time.sleep(10)
+        else:
             print('bit_ctrler: 拧紧力矩为 ', result[0], "Nm")
+        time.sleep(1)
+
 
 def py_ctrler():
 
@@ -135,11 +205,49 @@ def py_ctrler():
                 if not data:  # 检查是否收到空数据，表示客户端已断开连接
                     print("py_ctrler: 主控系统断开连接")
                     break
-                cobot.sendall(data.encode('utf-8'))
-                print("py_ctrler: 指定发送 ", data)
+                Message = ET.fromstring(data)
+                for Type in Message.findall('Type'):
+                    print('type:' , int(Type.text))
+                    time.sleep(1)
+                    # 当Tpye==0时为取电批
+                    if int(Type.text) == 0:
+                        for Command in Message.findall('Command'):
+                            if int(Command.text) == 1:
+                                cobot.sendall("GM4".encode('utf-8'))
+                            elif int(Command.text) == 2:
+                                cobot.sendall("GM6".encode('utf-8'))
+                    # 当Type==2时为放电批
+                    elif int(Type.text) == 2:
+                        for Command in Message.findall('Command'):
+                            if int(Command.text) == 1:
+                                cobot.sendall("PM4".encode('utf-8'))
+                            elif int(Command.text) == 2:
+                                cobot.sendall("PM6".encode('utf-8'))
+                    # 当Type==1时为拧钉子
+                    elif int(Type.text) == 1:
+                        for Command in Message.findall('Command'):
+                            cobot.sendall(Command.text.encode('utf-8'))
+                    print("指令发送完成，等待协作臂回传完成消息")
+                    recv = cobot.recv(1024).decode('utf-8')
+                    if int(recv) == 100:
+                        xml_data.Error_Data = "no error"
+                    elif int(recv) == 101:
+                        xml_data.Error_Data = "get screw failed ! ! !"
+                    elif int(recv) == 102:
+                        xml_data.Error_Data = "detect failed ! ! !"
+                    print("协作臂完成任务：" + str(recv) + " ! ! !")
+                    
+                    xml_data.TypeData = Type.text
+                    xml_data.Command_Data = Command.text
+                    # xml_data.Error_Data = "no error"
+
+                    ctrl_system.sendall(str(xml_data.XmlData()).encode('utf-8'))
+
+                # cobot.sendall(data.encode('utf-8'))
+                # print("py_ctrler: 指定发送 ", data)
         except Exception as e:
             print(f"py_ctrler: 主控系统通信错误: {e}")
-        
+
         # 关闭当前主控系统连接，并重新等待
         ctrl_system.close()
 
@@ -168,3 +276,4 @@ if __name__ == "__main__":
     # CamCtrler()
     thread_ctrler()
     # show_pos()
+    # danikor_test(1)
