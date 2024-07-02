@@ -25,7 +25,7 @@ hik_port = 8192
 hik = HikCtrl(hik_ip, hik_port)
 
 # host = '192.168.18.65'
-host = '192.168.1.100'
+host = '192.168.1.225'
 py_port = 9999
 
 cam_port = 9995
@@ -230,11 +230,11 @@ def py_ctrler():
                     print("指令发送完成，等待协作臂回传完成消息")
                     recv = cobot.recv(1024).decode('utf-8')
                     if int(recv) == 100:
-                        xml_data.Error_Data = "no error"
+                        xml_data.Error_Data = ""
                     elif int(recv) == 101:
-                        xml_data.Error_Data = "get screw failed ! ! !"
+                        xml_data.Error_Data = "101"
                     elif int(recv) == 102:
-                        xml_data.Error_Data = "detect failed ! ! !"
+                        xml_data.Error_Data = "102"
                     print("协作臂完成任务：" + str(recv) + " ! ! !")
                     
                     xml_data.TypeData = Type.text

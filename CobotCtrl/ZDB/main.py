@@ -25,7 +25,7 @@ transfer_ip = "192.168.1.10"
 transfer_port = 5700
 transfer = TransferCtrl(transfer_ip,transfer_port)
 
-host = '192.168.1.100'
+host = '192.168.1.101'
 py_port = 9999
 
 TransferCtrler_port = 9995
@@ -98,7 +98,7 @@ def transfer_ctrler():
         print('收到的消息为: ', data)
         if str(data) == 'GetTcp_1':
             # print('使用第一种获取tcp的方案')
-            TcpVec = transfer.GetDataFromTransfer(0,transfer_command)
+            TcpVec = transfer.GetDataFromTransfer([0,0],transfer_command)
             send_data = '(' + str(TcpVec[0]) + ',' + str(TcpVec[1]) + ',' + str(TcpVec[2]) + ',' + str(TcpVec[3]) + ',' + str(TcpVec[4]) + ',' + str(TcpVec[5]) + ')'
             print('当前tcp为：',send_data)
 
@@ -108,7 +108,7 @@ def transfer_ctrler():
             print('协作臂当前法兰姿态：', PosNow)
             
             # 从迁移获取相机的结果
-            TargetVec = transfer.GetDataFromTransfer(1,transfer_command,PosNow=PosNow)
+            TargetVec = transfer.GetDataFromTransfer([1,0],transfer_command,PosNow=PosNow)
 
             # 计算目标点位上方的位置
             TargetMat = tools.PosVecToPosMat(TargetVec)
@@ -121,6 +121,8 @@ def transfer_ctrler():
 
             
             print("目标位置为：",TargetVec)
+        # elif str(data) == 'GetAngle_1':
+
         cobot.sendall(send_data.encode('utf-8'))
 
 
@@ -159,38 +161,49 @@ def py_ctrler():
                     print("py_ctrler: 主控系统断开连接")
                     break
                 Message = ET.fromstring(data)
-                for Type in Message.findall('Type'):
-                    # 一共有五种天线
-                    # 第一种为：高度表发射天线×1
-                    # 第二种为：高度表接收天线×1
-                    # 第三种为：遥测天线×2
-                    # 第四种为：安控天线×2
-                    # 第五种为：GPS天线×1
 
-                    for Command in Message.findall('Command'):
-                        data_ = '(' + str(int(Type.text)) + ',' + str(int(Command.text)) + ')'
-                        print('即将发送的消息为：',data_)
-                        cobot.sendall(data_.encode('utf-8'))
-                    # 当Tpye==1时为第一种天线
-                    # if int(Type.text) == 1:
-                    #     for Command in Message.findall('Command'):
-                    #         data_ = '(' + str(int(Type.text)) + ',' + str(int(Command.text)) + ')'
-                    #         cobot.sendall(data_.encode('utf-8'))
-                    # # 当Type==2时为第二种天线
-                    # elif int(Type.text) == 2:
-                    #     for Command in Message.findall('Command'):
-                    #         cobot.sendall(str(2).encode('utf-8'))
-                    # elif int(Type.text) == 3:
-                    #     for Command in Message.findall('Command'):
-                    #         data_ = int(Command.text) + 2
-                    #         cobot.sendall(str(data_).encode('utf-8'))
-                    # elif int(Type.text) == 4:
-                    #     for Command in Message.findall('Command'):
-                    #         data_ = int(Command.text) + 4
-                    #         cobot.sendall(str(data_).encode('utf-8'))     
-                    # elif int(Type.text) == 4:
-                    #     for Command in Message.findall('Command'):
-                    #         cobot.sendall(str(7).encode('utf-8'))    
+
+                for Command in Message.findall('Command'):                    
+                    for ProductType in Message.findall('ProductType'):
+                        for ProductNum in Message.findall('ProductNum'):
+                            data_ = '(' + str(int(Command.text)) + ','  + str(int(ProductType.text)) + ',' + str(int(ProductNum.text)) + ')'
+                            print('即将发送的消息为：',data_)
+                            cobot.sendall(data_.encode('utf-8'))
+                    print("指令发送完成，等待协作臂回传完成消息")
+                    recv = cobot.recv(1024).decode('utf-8')
+                    if int(recv) == 100:
+                        xml_data.Error_Data = ""
+                    elif int(recv) == 101:
+                        xml_data.Error_Data = "101" #可循环五次
+                    elif int(recv) == 102:
+                        xml_data.Error_Data = "102" 
+                    elif int(recv) == 103:
+                        xml_data.Error_Data = "103"
+                    
+                    print("协作臂完成任务：" + str(recv) + " ! ! !")
+                    
+                    # xml_data.TypeData = Command.text
+                    xml_data.Command_Data = Command.text
+                    # xml_data.Error_Data = "no error"
+
+                    ctrl_system.sendall(str(xml_data.XmlData()).encode('utf-8'))
+
+                    # if int(Command.text) == 1:
+                    #     # 一共有五种天线
+                    #     # 第一种为：高度表发射天线×1
+                    #     # 第二种为：高度表接收天线×1
+                    #     # 第三种为：遥测天线×2
+                    #     # 第四种为：安控天线×2
+                    #     # 第五种为：GPS天线×1
+                    #     for ProductType in Message.findall('ProductType'):
+                    #         for ProductNum in Message.findall('ProductNum'):
+                    #             data_ = '(' + str(int(ProductType.text)) + ',' + str(int(ProductNum.text)) + ')'
+                    #             print('即将发送的消息为：',data_)
+                    #             cobot.sendall(data_.encode('utf-8'))
+                    # elif int(Command.text) == 2:
+                        
+
+                
                     
                     # print("指令发送完成，等待协作臂回传完成消息")
                     # recv = cobot.recv(1024).decode('utf-8')

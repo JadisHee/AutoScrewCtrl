@@ -9,9 +9,10 @@ class TransferCtrl:
         self.port = port
         
         self.mod = [
-            '160,1,0',
-            '160,2,0'
-                    ]
+            ['160,1,0', '160,1,1', '160,1,2', '160,1,3', '160,1,4'],
+            ['160,2,0', '160,2,1', '160,2,2', '160,2,3', '160,2,4'],
+            ['160,3,0', '160,3,1', '160,3,2', '160,3,3', '160,3,4']
+            ]
         
         pass
 
@@ -63,9 +64,10 @@ class TransferCtrl:
             * Function:     GetTcpFromTransfer
             * Description:  控制固定机位的迁移相机对工件底部进行识别并返回姿态结果
             * Inputs:
-                                DetectMod:     检测模式
-                                    0: 眼在手外确认Tcp方案
-                                    1: 眼在手上确认目标位置方案
+                                DetectMod:     检测模式，x表示不同产品
+                                    [0,x]:  眼在手外的产品重定位方案
+                                    [1,x]:  眼在手上识别目标安装位置
+                                    [2,x]:  眼在手上识别目标安装角度
                                 StartSignal:   开始信号
             * Outputs:      
             * Returns:      0: 超过3s未检测目标
@@ -76,11 +78,46 @@ class TransferCtrl:
         TransferClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TransferClient.connect((self.ip,self.port))
         # 
-        if DetectMod == 0:
-            ModCode = self.mod[0]    
-        elif DetectMod == 1 and PosNow is not None:
-            ModCode = self.mod[1]
+        if DetectMod[0] == 0:
+            if DetectMod[1] == 0:
+                ModCode = self.mod[0][0]
+            elif DetectMod[1] == 1:
+                ModCode = self.mod[0][1]
+            elif DetectMod[1] == 2:
+                ModCode = self.mod[0][2]
+            elif DetectMod[1] == 3:
+                ModCode = self.mod[0][3]
+            elif DetectMod[1] == 4:
+                ModCode = self.mod[0][4]
+        elif DetectMod[0] == 1 and PosNow is not None:
+            if DetectMod[1] == 0:
+                ModCode = self.mod[1][0]
+            elif DetectMod[1] == 1:
+                ModCode = self.mod[1][1]
+            elif DetectMod[1] == 2:
+                ModCode = self.mod[1][2]
+            elif DetectMod[1] == 3:
+                ModCode = self.mod[1][3]
+            elif DetectMod[1] == 4:
+                ModCode = self.mod[1][4]
+            # ModCode = self.mod[1]
             PosDataSend = '172,'+ str(PosNow[0]*1000) + ',' + str(PosNow[1]*1000) + ',' + str(PosNow[2]*1000) + ',' + str(PosNow[5]*180/math.pi) + ',' + str(PosNow[4]*180/math.pi) + ',' + str(PosNow[3]*180/math.pi)
+        elif DetectMod[0] == 2 and PosNow is not None:
+            if DetectMod[1] == 0:
+                ModCode = self.mod[2][0]
+            elif DetectMod[1] == 1:
+                ModCode = self.mod[2][1]
+            elif DetectMod[1] == 2:
+                ModCode = self.mod[2][2]
+            elif DetectMod[1] == 3:
+                ModCode = self.mod[2][3]
+            elif DetectMod[1] == 4:
+                ModCode = self.mod[2][4]
+            # ModCode = self.mod[1]
+            PosDataSend = '172,'+ str(PosNow[0]*1000) + ',' + str(PosNow[1]*1000) + ',' + str(PosNow[2]*1000) + ',' + str(PosNow[5]*180/math.pi) + ',' + str(PosNow[4]*180/math.pi) + ',' + str(PosNow[3]*180/math.pi)
+
+
+
         else:
             print('方案选择输入错误 ! ! !')
             return 0
@@ -97,7 +134,7 @@ class TransferCtrl:
         TimeStart = time.time()
         while 1:
             # 若检测模式为检测放置点，则需要先发送当前位姿
-            if DetectMod == 1:
+            if DetectMod[0] == 1 or DetectMod[0] == 2:
                 TransferClient.send(PosDataSend.encode('utf-8'))
                 FeedBack = TransferClient.recv(1024)
                 FeedBackString = FeedBack.decode()
@@ -133,7 +170,7 @@ class TransferCtrl:
         return 0
 
 
-
+    
 
 
 
