@@ -87,7 +87,7 @@ def transfer_ctrler():
 
     # 设置最大连接数，超过后排队
     transfer_server.listen(1)
-    print('cam_ctrler: 等待协作臂连接 ! ! !')
+    print('transfer_ctrler: 等待协作臂连接 ! ! !')
 
     cobot, addr_B = transfer_server.accept()
     print(f"transfer_ctrler: 协作臂已连接，地址: {addr_B}")
@@ -95,17 +95,17 @@ def transfer_ctrler():
     while True:
         print("transfer_ctrler: 等待触发信号 ! ! !")
         data = cobot.recv(1024).decode('utf-8')
-        print('收到的消息为: ', data)
+        print('transfer_ctrler: 收到出发指令 ', data)
         if str(data) == 'GetTcp_1':
             # print('使用第一种获取tcp的方案')
             TcpVec = transfer.GetDataFromTransfer([0,0],transfer_command)
             send_data = '(' + str(TcpVec[0]) + ',' + str(TcpVec[1]) + ',' + str(TcpVec[2]) + ',' + str(TcpVec[3]) + ',' + str(TcpVec[4]) + ',' + str(TcpVec[5]) + ')'
-            print('当前tcp为：',send_data)
+            print('transfer_ctrler: 当前tcp为：',send_data)
 
             cobot.sendall(send_data.encode('utf-8'))
         elif str(data) == 'GetTarget_1':
             PosNow = duco.GetDucoPos(0)
-            print('协作臂当前法兰姿态：', PosNow)
+            print('transfer_ctrler: 协作臂当前法兰姿态：', PosNow)
             
             # 从迁移获取相机的结果
             TargetVec = transfer.GetDataFromTransfer([1,0],transfer_command,PosNow=PosNow)
@@ -120,7 +120,7 @@ def transfer_ctrler():
             send_data = '(' + str(UpTargetVec[0]) + ',' + str(UpTargetVec[1]) + ',' + str(UpTargetVec[2]) + ',' + str(UpTargetVec[3]) + ',' + str(UpTargetVec[4]) + ',' + str(UpTargetVec[5]) + ')'
 
             
-            print("目标位置为：",TargetVec)
+            print("transfer_ctrler: 目标位置为：",TargetVec)
         # elif str(data) == 'GetAngle_1':
 
         cobot.sendall(send_data.encode('utf-8'))
