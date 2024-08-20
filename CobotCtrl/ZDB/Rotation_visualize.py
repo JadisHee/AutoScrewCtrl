@@ -37,22 +37,40 @@ ax.set_ylim([-1.5, 1.5])
 ax.set_zlim([-1.5, 1.5])
 
 
-# DucoBase
+# DucoScrew_Base
 T0 = np.eye(4)
-draw_axes(ax, T0[:3, 3], T0[:3, :3], length=1.0, colors=('r', 'g', 'b'),system_label='Base')
+draw_axes(ax, T0[:3, 3], T0[:3, :3], length=1.0, colors=('r', 'g', 'b'),system_label='Base1')
 
-# DucoBase --> Target
+# DucoScrew_Base --> DucoAntenna_Base
 V1 = [1.0666099999999998, -0.30418, 0.276, -3.140370923113397, -0.02181661564992912, 3.1353094682826135]
-T1 = tools.PosVecToPosMat(V1)
-draw_axes(ax, T1[:3, 3], T1[:3, :3], length=0.5, colors=('r', 'g', 'b'),system_label='Target')
+T1 = np.array([
+    [ 7.57802317e-03, -9.99861960e-01,  1.47858391e-02 , -1.10862363e-02] ,
+    [ 9.99969389e-01,  7.60359218e-03 , 1.66546895e-03 , 1.95917636e+00], 
+    [-1.77776450e-03 , 1.47728271e-02 , 9.99889208e-01 , 1.40208922e-03], 
+    [ 0.00000000e+00 , 0.00000000e+00 , 0.00000000e+00 , 1.00000000e+00],
+])
+draw_axes(ax, T1[:3, 3], T1[:3, :3], length=0.5, colors=('r', 'g', 'b'),system_label='Base2')
 
-# Target --> TargetUp
-V2 = [0,0,-0.22,0,0,0]
+# {-0.9578502066730278,0.16234268956958423,0.4947726440709969,-3.0586895141200623,0.004014257279587152,1.5791739072044697}
+
+
+# DucoAntenna_Base --> Target
+V2 = [-0.9578502066730278,0.16234268956958423,0.4947726440709969,-3.0586895141200623,0.004014257279587152,1.5791739072044697]
+v7 = [-1.0319800000000001, 0.66915, 0.25306, -0.004537856055185257, 2.9759609075755313, 0.012217304763960306]
 T2 = tools.PosVecToPosMat(V2)
 
-# DucoBase --> TargetUp
-T3 = np.dot(T1,T2)
-draw_axes(ax, T3[:3, 3], T3[:3, :3], length=0.5, colors=('r', 'g', 'b'),system_label='TargetUp')
+# 绕Z轴旋转180度
+V4 = [0,0,0,0,0,0]
+T4 = tools.PosVecToPosMat(V4)
+print(T4)
+T5 = np.dot(T2,T4)
+
+# DucoScrew_Base --> Target
+T3 = np.dot(T1,T5)
+V3 = tools.PosMatToPosVec(T3)
+print(V3)
+draw_axes(ax, T3[:3, 3], T3[:3, :3], length=0.5, colors=('r', 'g', 'b'),system_label='Target')
+
 
 
 # # Trans Bit --> Cam

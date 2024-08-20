@@ -7,3 +7,9 @@
 101 产品类型错误或缺失
 102 产品重定位失败
 103 目标位置检测失败
+
+<Message>
+    <ProductType>1</ProductType>
+    <ScrewIndex>1</ScrewIndex>
+    
+</Message>

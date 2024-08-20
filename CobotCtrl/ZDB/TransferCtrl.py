@@ -129,7 +129,7 @@ class TransferCtrl:
         if FeedBackString == '001':
             print('切换失败 ! ! !')
             return 0
-
+        time.sleep(1)
         # 开始时间
         TimeStart = time.time()
         while 1:

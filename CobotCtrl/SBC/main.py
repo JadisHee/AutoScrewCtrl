@@ -1,6 +1,7 @@
 import socket
 import threading
 import time
+import math
 import numpy as np
 
 from DucoCtrl import DucoCtrl
@@ -266,7 +267,7 @@ def py_ctrler():
         ctrl_system.close()
 
         # print("py_ctrler: 等待主控系统指令 ! ! !")
-        # data = ctrl_system.recv(1024).decode('utf-8')
+        # data = ctrl_system.recv(1024).decode('utf-8') 
         # cobot.sendall(data.encode('utf-8'))
         # print("py_ctrler: 指定发送 ", data)
        
@@ -291,27 +292,43 @@ def calc_trans():
         '''
     # 由迁移一次性提供数据
     # kuka_flange --> kuka_cam
-    vec_fc = [1,1,1,1,1,1]
+    # vec_fc = [1,1,1,1,1,1]
     # kuka_base --> kuka_flange
-    vec_bf = [1,1,1,1,1,1]
-    # Duco_Base --> kuka_cam
-    vec_Bc = [1,1,1,1,1,1]
+    vec_bf = [0.62485,-0.88621,0.90063,179.93*math.pi/180,-0.02*math.pi/180,-105.19*math.pi/180]
+    
+    # vec_Bc = [1,1,1,1,1,1]
 
     # 将位姿向量变换为姿态矩阵
-    mat_fc = tools.PosVecToPosMat(vec_fc)
+    # mat_fc = tools.PosVecToPosMat(vec_fc)
+    # kuka_flange --> kuka_cam
+    mat_fc = np.array([
+        [0.98404837, -0.00521527, 0.17782426, 0.062254906],
+        [0.17787091, 0.010545616, -0.9839973, -0.22911476],
+        [0.00325654,   0.9999308, 0.01130504, 0.077875854],
+        [0,0,0,1]
+    ])
     mat_bf = tools.PosVecToPosMat(vec_bf)
-    mat_Bc = tools.PosVecToPosMat(vec_Bc)
 
+
+    # Duco_Base --> kuka_cam
+    mat_Bc = np.array([
+        [-0.39366165, -0.00508397,   0.9192413,  -0.23946294],
+        [  -0.919205,  0.01264599, -0.39357617,   0.93604486],
+        [-0.00962385, -0.99990714, -0.00965151,   0.53141846],
+        [0,0,0,1]
+    ])
     # Duco_Base --> kuka_base
     mat_Bb = tools.B_b_calc(mat_fc,mat_bf,mat_Bc)
 
-    print 
+    return mat_Bb
 
 
 if __name__ == "__main__":
     # server()
     # danikor_test()
     # CamCtrler()
-    thread_ctrler()
+    # thread_ctrler()
     # show_pos()
     # danikor_test(1)
+    trans = calc_trans()
+    print(trans)
